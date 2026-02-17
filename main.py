@@ -56,7 +56,7 @@ def set_page_style():
         /* 강조 버튼 (SK Red) */
         div.stButton > button:first-child {
             background-color: var(--primary);
-            color: white;
+            color: white !important;
             border: none;
         }
         
@@ -189,14 +189,17 @@ def show_main_content(emp_id):
             del st.session_state.logged_in_id
             st.rerun()
 
-    tab1, tab2, tab3, tab4 = st.tabs(["🔒 데이터 등록", "📩 파트너 매칭", "📊 시너지 분석", "👤 내 성향 분석"])
+    # 알림 카운트 (상대방으로부터 온 요청)
+    pending_requests = db.get_pending_requests(emp_id)
+    notif_badge = f" 🔴 {len(pending_requests)}" if pending_requests else ""
+
+    tab1, tab2, tab3, tab4 = st.tabs(["🔒 데이터 등록", f"📩 파트너 매칭{notif_badge}", "📊 시너지 분석", "👤 내 성향 분석"])
 
     with tab1:
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("📋 내 성향 데이터 업데이트")
         
         # 마지막 동기화 정보 표시
-        user_info = db.get_user_info(emp_id)
         if user_info and user_info[2]:
             st.caption(f"⏱ 마지막 동기화: {user_info[2]} ({user_info[3]})")
         else:
@@ -207,11 +210,8 @@ def show_main_content(emp_id):
         # 사용할 LLM 선택
         selected_llm = st.selectbox("사용 중인 LLM을 선택해 주세요", ["ChatGPT", "Gemini", "Claude", "기타"], index=0)
         
-        # 클립보드 복사를 위한 HTML/JS 컴포넌트 (버튼만 노출)
-        # 프롬프트에 선택된 LLM 정보 주입
-        base_prompt = prompts.USER_ANALYSIS_PROMPT
-        dynamic_prompt = f"[Target LLM: {selected_llm}]\\n\\n" + base_prompt.replace("`", "\\`").replace("\n", "\\n")
-        
+        # 클립보드 복사를 위한 HTML/JS 컴포넌트 (버튼만 노출, 텍스트 완전 은폐)
+        prompt_text = prompts.USER_ANALYSIS_PROMPT.replace("`", "\\`").replace("\n", "\\n")
         copy_code_html = f"""
             <div style="margin-bottom: 20px;">
                 <button onclick="copyToClipboard()" style="
@@ -230,7 +230,7 @@ def show_main_content(emp_id):
             </div>
             <script>
                 function copyToClipboard() {{
-                    const text = `{dynamic_prompt}`;
+                    const text = `[Target LLM: {selected_llm}]\\n\\n{prompt_text}`;
                     navigator.clipboard.writeText(text).then(function() {{
                         alert('{selected_llm}용 분석 문구가 복사되었습니다! 이제 GPT나 Gemini에 붙여넣으세요.');
                     }}, function(err) {{
@@ -241,25 +241,47 @@ def show_main_content(emp_id):
         """
         st.components.v1.html(copy_code_html, height=80)
         
-        raw_input = st.text_area("분석 결과 코드를 입력하세요", height=150, placeholder="GPT/Gemini가 내뱉은 영문/숫자 결과 코드를 여기에 붙여넣으세요.")
+        raw_input = st.text_area("분석 결과는 타인이 볼 수 없습니다.", height=150, placeholder="GPT/Gemini가 내뱉은 영문/숫자 결과 코드를 여기에 붙여넣으세요.")
         if st.button("데이터 동기화"):
             if not raw_input:
                 st.warning("코드를 입력해주세요.")
             else:
                 try:
-                    decoded_str = base64.b64decode(raw_input).decode('utf-8')
+                    # 입력 데이터 정제
+                    cleaned_input = raw_input.strip()
+                    if cleaned_input.startswith("```"):
+                        cleaned_input = re.sub(r'^```[a-zA-Z0-9]*\n|```$', '', cleaned_input, flags=re.MULTILINE).strip()
+                    
+                    # Base64 디코딩 및 JSON 검증
+                    decoded_bytes = base64.b64decode(cleaned_input)
+                    decoded_str = decoded_bytes.decode('utf-8')
                     json.loads(decoded_str)
+                    
                     db.save_profile(emp_id, decoded_str, llm_name=selected_llm)
                     st.success(f"데이터가 {selected_llm} 기반으로 성공적으로 동기화되었습니다.")
                     st.balloons()
                     st.rerun()
-                except:
-                    st.error("올바른 코드 형식이 아닙니다.")
+                except Exception as e:
+                    st.error("유효하지 않은 코드 형식입니다. 전체 코드가 제대로 복사되었는지 확인해 주세요.")
         st.markdown('</div>', unsafe_allow_html=True)
 
     with tab2:
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.subheader("📩 협업 파트너 매칭")
+        
+        # 1. 받은 요청 (알림 섹션)
+        if pending_requests:
+            st.subheader(f"🔔 받은 분석 요청 ({len(pending_requests)})")
+            for req in pending_requests:
+                c1, c2 = st.columns([3, 1])
+                c1.write(f"**{req[0]}** 구성원님이 매칭을 요청했습니다.")
+                if c2.button("수락하기", key=f"acc_{req[0]}", use_container_width=True):
+                    db.accept_match_request(req[0], emp_id)
+                    st.toast(f"{req[0]}님의 요청을 수락했습니다.")
+                    st.rerun()
+            st.divider()
+
+        # 2. 보낸 요청
+        st.subheader("📩 협업 파트너 매칭 요청")
         st.markdown('<div class="description">함께 일하는 동료와의 업무 궁합이나 관계 역동을 확인하고 싶으신가요? 상대방의 사번을 입력해 요청을 보내보세요.</div>', unsafe_allow_html=True)
         
         target_id = st.text_input("상대방 사번", placeholder="slXXXXX")
@@ -277,17 +299,6 @@ def show_main_content(emp_id):
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("📊 시너지 리포트 센터")
         
-        pending = db.get_pending_requests(emp_id)
-        if pending:
-            st.markdown("#### 🔔 수락 대기 중")
-            for req in pending:
-                c1, c2 = st.columns([3, 1])
-                c1.write(f"**{req[0]}** 님의 매칭 요청")
-                if c2.button("수락", key=f"acc_{req[0]}"):
-                    db.accept_match_request(req[0], emp_id)
-                    st.rerun()
-            st.divider()
-
         accepted = db.get_accepted_matches(emp_id)
         if not accepted:
             st.info("현재 매칭된 파트너가 없습니다. 파트너 매칭 탭을 이용해보세요.")
