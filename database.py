@@ -61,6 +61,19 @@ def accept_match_request(req_id, target_id):
         c.execute("UPDATE matches SET status='Accepted' WHERE req_id=? AND target_id=?", (req_id, target_id))
         conn.commit()
 
+def cancel_match_request(req_id, target_id):
+    """보낸 요청을 취소(삭제)합니다."""
+    with get_connection() as conn:
+        c = conn.cursor()
+        c.execute("DELETE FROM matches WHERE req_id=? AND target_id=? AND status='Pending'", (req_id, target_id))
+        conn.commit()
+
+def get_sent_requests(emp_id):
+    """내가 보낸 대기 중인 요청 목록을 가져옵니다."""
+    with get_connection() as conn:
+        c = conn.cursor()
+        return c.execute("SELECT target_id FROM matches WHERE req_id=? AND status='Pending'", (emp_id,)).fetchall()
+
 def get_accepted_matches(emp_id):
     with get_connection() as conn:
         c = conn.cursor()

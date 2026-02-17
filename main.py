@@ -13,13 +13,14 @@ if 'view' not in st.session_state:
     st.session_state.view = 'login'
 
 def set_page_style():
-    """전문적인 SaaS 느낌의 클린 UI 스타일링"""
+    """다크모드 완벽 대응 및 SaaS 스타일 UI"""
     st.set_page_config(
         page_title="엔무버 궁합 프로그램", 
         page_icon="🤝",
         layout="centered"
     )
     
+    # CSS 변수를 활용하여 라이트/다크 모드 통합 대응
     st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Noto+Sans+KR:wght@300;400;700&display=swap');
@@ -28,52 +29,34 @@ def set_page_style():
             font-family: 'Inter', 'Noto Sans KR', sans-serif;
         }
 
-        .main {
-            background-color: #fcfcfc;
-        }
-
-        /* 메인 컬러: SK Red 포인트 */
-        :root {
-            --primary: #E1002A;
-            --primary-light: #FFEBEE;
-            --text-main: #1A1A1A;
-            --text-sub: #666666;
-            --bg-card: #FFFFFF;
-        }
-
-        /* 버튼 스타일 최적화 */
+        /* 버튼 및 인터랙션 요소 */
         .stButton > button {
             width: 100%;
             border-radius: 8px;
             height: 3rem;
             font-weight: 600;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid #E0E0E0;
-            background-color: white;
-            color: var(--text-main);
+            transition: all 0.2s ease;
         }
 
-        /* 강조 버튼 (SK Red) */
+        /* 강조 버튼 (SK Red) - 다크모드에서도 명확히 보이도록 설정 */
         div.stButton > button:first-child {
-            background-color: var(--primary);
-            color: white !important;
-            border: none;
+            background-color: #E1002A !important;
+            color: #FFFFFF !important;
+            border: none !important;
         }
         
         div.stButton > button:hover {
-            box-shadow: 0 4px 12px rgba(225, 0, 42, 0.15);
+            box-shadow: 0 4px 15px rgba(225, 0, 42, 0.3);
             transform: translateY(-1px);
-            opacity: 0.95;
         }
 
-        /* 카드형 섹션 */
+        /* 카드형 섹션 - 다크모드 대응 컬러 */
         .card {
-            background-color: var(--bg-card);
             padding: 2rem;
             border-radius: 16px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.02), 0 12px 24px rgba(0,0,0,0.03);
             margin-bottom: 2rem;
-            border: 1px solid #F0F0F0;
+            border: 1px solid rgba(128, 128, 128, 0.2);
+            background-color: rgba(255, 255, 255, 0.05);
         }
 
         /* 타이틀 디자인 */
@@ -81,14 +64,16 @@ def set_page_style():
             font-size: 2.2rem;
             font-weight: 800;
             letter-spacing: -1px;
-            color: var(--text-main);
             text-align: center;
             margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #E1002A 0%, #FF5E00 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         
         .header-sub {
             font-size: 1rem;
-            color: var(--text-sub);
+            color: #888;
             text-align: center;
             margin-bottom: 3rem;
         }
@@ -97,32 +82,20 @@ def set_page_style():
         .stTabs [data-baseweb="tab-list"] {
             gap: 8px;
             padding: 4px;
-            background-color: #F5F5F5;
             border-radius: 12px;
         }
-        .stTabs [data-baseweb="tab"] {
-            border-radius: 8px;
-            font-weight: 600;
-            color: #888;
-        }
-        .stTabs [aria-selected="true"] {
-            background-color: white !important;
-            color: var(--primary) !important;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-        }
-
-        /* 입력 폼 */
-        div[data-baseweb="input"] {
-            border-radius: 8px;
-            border: 1px solid #E0E0E0;
-        }
-
+        
         /* 설명 문구 */
         .description {
             font-size: 0.9rem;
-            color: var(--text-sub);
+            color: #888;
             line-height: 1.6;
             margin-bottom: 1.5rem;
+        }
+
+        /* 다크모드 글자색 보정 */
+        [data-testid="stMarkdownContainer"] p {
+            color: inherit;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -189,7 +162,7 @@ def show_main_content(emp_id):
             del st.session_state.logged_in_id
             st.rerun()
 
-    # 알림 카운트 (상대방으로부터 온 요청)
+    # 알림 데이터 가져오기
     pending_requests = db.get_pending_requests(emp_id)
     notif_badge = f" 🔴 {len(pending_requests)}" if pending_requests else ""
 
@@ -199,7 +172,6 @@ def show_main_content(emp_id):
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("📋 내 성향 데이터 업데이트")
         
-        # 마지막 동기화 정보 표시
         if user_info and user_info[2]:
             st.caption(f"⏱ 마지막 동기화: {user_info[2]} ({user_info[3]})")
         else:
@@ -207,10 +179,8 @@ def show_main_content(emp_id):
 
         st.markdown('<div class="description">외부 LLM을 통해 분석된 본인의 고유 성향 코드를 등록하세요. 기존 데이터가 있다면 새로운 내용으로 업데이트됩니다.</div>', unsafe_allow_html=True)
         
-        # 사용할 LLM 선택
         selected_llm = st.selectbox("사용 중인 LLM을 선택해 주세요", ["ChatGPT", "Gemini", "Claude", "기타"], index=0)
         
-        # 클립보드 복사를 위한 HTML/JS 컴포넌트 (버튼만 노출, 텍스트 완전 은폐)
         prompt_text = prompts.USER_ANALYSIS_PROMPT.replace("`", "\\`").replace("\n", "\\n")
         copy_code_html = f"""
             <div style="margin-bottom: 20px;">
@@ -225,74 +195,78 @@ def show_main_content(emp_id):
                     cursor: pointer;
                     font-size: 1.1rem;
                     box-shadow: 0 4px 12px rgba(225, 0, 42, 0.2);
-                    transition: all 0.2s;
                 ">📋 {selected_llm}용 분석 문구 복사하기</button>
             </div>
             <script>
                 function copyToClipboard() {{
                     const text = `[Target LLM: {selected_llm}]\\n\\n{prompt_text}`;
                     navigator.clipboard.writeText(text).then(function() {{
-                        alert('{selected_llm}용 분석 문구가 복사되었습니다! 이제 GPT나 Gemini에 붙여넣으세요.');
-                    }}, function(err) {{
-                        console.error('복사 실패: ', err);
+                        alert('{selected_llm}용 분석 문구가 복사되었습니다!');
                     }});
                 }}
             </script>
         """
         st.components.v1.html(copy_code_html, height=80)
         
-        raw_input = st.text_area("분석 결과는 타인이 볼 수 없습니다.", height=150, placeholder="GPT/Gemini가 내뱉은 영문/숫자 결과 코드를 여기에 붙여넣으세요.")
+        raw_input = st.text_area("분석 결과는 타인이 볼 수 없습니다.", height=150, placeholder="영문/숫자 결과 코드를 붙여넣으세요.")
         if st.button("데이터 동기화"):
             if not raw_input:
                 st.warning("코드를 입력해주세요.")
             else:
                 try:
-                    # 입력 데이터 정제
                     cleaned_input = raw_input.strip()
                     if cleaned_input.startswith("```"):
                         cleaned_input = re.sub(r'^```[a-zA-Z0-9]*\n|```$', '', cleaned_input, flags=re.MULTILINE).strip()
-                    
-                    # Base64 디코딩 및 JSON 검증
                     decoded_bytes = base64.b64decode(cleaned_input)
                     decoded_str = decoded_bytes.decode('utf-8')
                     json.loads(decoded_str)
-                    
                     db.save_profile(emp_id, decoded_str, llm_name=selected_llm)
-                    st.success(f"데이터가 {selected_llm} 기반으로 성공적으로 동기화되었습니다.")
+                    st.success("데이터가 성공적으로 동기화되었습니다.")
                     st.balloons()
                     st.rerun()
-                except Exception as e:
-                    st.error("유효하지 않은 코드 형식입니다. 전체 코드가 제대로 복사되었는지 확인해 주세요.")
+                except:
+                    st.error("유효하지 않은 코드 형식입니다.")
         st.markdown('</div>', unsafe_allow_html=True)
 
     with tab2:
         st.markdown('<div class="card">', unsafe_allow_html=True)
         
-        # 1. 받은 요청 (알림 섹션)
+        # 1. 받은 요청
         if pending_requests:
-            st.subheader(f"🔔 받은 분석 요청 ({len(pending_requests)})")
+            st.subheader(f"🔔 받은 매칭 요청 ({len(pending_requests)})")
             for req in pending_requests:
                 c1, c2 = st.columns([3, 1])
-                c1.write(f"**{req[0]}** 구성원님이 매칭을 요청했습니다.")
-                if c2.button("수락하기", key=f"acc_{req[0]}", use_container_width=True):
+                c1.write(f"👉 **{req[0]}** 님이 매칭을 요청했습니다.")
+                if c2.button("수락", key=f"acc_{req[0]}"):
                     db.accept_match_request(req[0], emp_id)
-                    st.toast(f"{req[0]}님의 요청을 수락했습니다.")
                     st.rerun()
             st.divider()
 
-        # 2. 보낸 요청
-        st.subheader("📩 협업 파트너 매칭 요청")
-        st.markdown('<div class="description">함께 일하는 동료와의 업무 궁합이나 관계 역동을 확인하고 싶으신가요? 상대방의 사번을 입력해 요청을 보내보세요.</div>', unsafe_allow_html=True)
-        
+        # 2. 보낸 요청 (철회 기능)
+        sent_requests = db.get_sent_requests(emp_id)
+        if sent_requests:
+            st.subheader(f"📨 보낸 매칭 요청 ({len(sent_requests)})")
+            for req in sent_requests:
+                c1, c2 = st.columns([3, 1])
+                c1.write(f"⌛ **{req[0]}** 님께 요청을 보냈습니다.")
+                if c2.button("철회", key=f"can_{req[0]}", help="상대방이 수락하기 전까지 취소 가능"):
+                    db.cancel_match_request(emp_id, req[0])
+                    st.toast("요청이 철회되었습니다.")
+                    st.rerun()
+            st.divider()
+
+        # 3. 새로운 요청 보내기
+        st.subheader("➕ 새로운 파트너 매칭")
         target_id = st.text_input("상대방 사번", placeholder="slXXXXX")
         if st.button("매칭 요청 발송"):
             if not validate_emp_id(target_id):
                 st.error("사번 형식을 확인해주세요.")
             elif target_id == emp_id:
-                st.warning("자기 자신은 매칭할 수 없습니다.")
+                st.warning("본인에게는 요청할 수 없습니다.")
             else:
                 db.send_match_request(emp_id, target_id)
-                st.success("요청 완료! 상대방이 수락하면 분석이 가능합니다.")
+                st.success("요청 완료!")
+                st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
     with tab3:
@@ -301,11 +275,10 @@ def show_main_content(emp_id):
         
         accepted = db.get_accepted_matches(emp_id)
         if not accepted:
-            st.info("현재 매칭된 파트너가 없습니다. 파트너 매칭 탭을 이용해보세요.")
+            st.info("현재 매칭된 파트너가 없습니다.")
         else:
             other_ids = list(set([m[0] if m[1] == emp_id else m[1] for m in accepted]))
             selected_other = st.selectbox("분석 대상 선택", other_ids)
-            
             st.write("")
             mode = st.radio("분석 관점 선택", ["직장 동료", "연인 궁합", "상사-부하"], horizontal=True)
             
@@ -321,17 +294,16 @@ def show_main_content(emp_id):
                     can_proceed = False
             elif mode == "상사-부하":
                 st.markdown("---")
-                superior = st.selectbox("누가 리더(상사)인가요?", [user_info[0], db.get_user_info(selected_other)[0]])
+                other_name = db.get_user_info(selected_other)[0]
+                superior = st.selectbox("누가 리더(상사)인가요?", [user_info[0], other_name])
                 additional_info['superior_name'] = superior
-                sub_list = [user_info[0], db.get_user_info(selected_other)[0]]
-                sub_list.remove(superior)
-                additional_info['subordinate_name'] = sub_list[0]
+                additional_info['subordinate_name'] = other_name if superior == user_info[0] else user_info[0]
 
-            if st.button("전문 AI 분석 시작", disabled=not can_proceed):
+            if st.button("시너지 분석 시작", disabled=not can_proceed):
                 info_a = db.get_user_info(emp_id)
                 info_b = db.get_user_info(selected_other)
                 mode_map = {"직장 동료": "colleague", "연인 궁합": "couple", "상사-부하": "hierarchy"}
-                with st.spinner("🔍 정밀 분석 리포트 생성 중..."):
+                with st.spinner("🔍 분석 중..."):
                     report = ai_engine.analyze_compatibility(info_a[1], info_b[1], info_a[0], info_b[0], mode=mode_map[mode], additional_info=additional_info)
                 st.markdown("---")
                 st.markdown(report)
@@ -340,43 +312,23 @@ def show_main_content(emp_id):
     with tab4:
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("👤 개인 성향 심층 분석")
-        st.markdown('<div class="description">본인의 데이터를 기반으로 MBTI 유형과 최신 트렌드 바이브를 정밀하게 진단합니다.</div>', unsafe_allow_html=True)
-        
         info_self = db.get_user_info(emp_id)
         if not info_self[1]:
             st.warning("데이터 등록 탭에서 먼저 정보를 입력해주세요.")
         else:
-            gender = st.radio("성별 (에겐테토 분석용)", ["남성", "여성"], horizontal=True)
+            gender = st.radio("성별 (분석용)", ["남성", "여성"], horizontal=True)
             st.write("")
-            
-            # 버튼 3개를 하나의 로우에 꽉 차게 배치
             btn_cols = st.columns(3)
             report_type = None
-            
-            with btn_cols[0]:
-                if st.button("🧩 MBTI 분석", use_container_width=True):
-                    report_type = "self_mbti"
-            with btn_cols[1]:
-                if st.button("🎭 에겐테토분석", use_container_width=True):
-                    report_type = "self_archetype"
-            with btn_cols[2]:
-                if st.button("🌟 장단점 분석", use_container_width=True):
-                    report_type = "self_swot"
+            if btn_cols[0].button("🧩 MBTI 분석", use_container_width=True): report_type = "self_mbti"
+            if btn_cols[1].button("🎭 에겐테토분석", use_container_width=True): report_type = "self_archetype"
+            if btn_cols[2].button("🌟 장단점 분석", use_container_width=True): report_type = "self_swot"
             
             if report_type:
-                with st.spinner("🔍 AI가 심층 성향을 분석하고 있습니다..."):
-                    report = ai_engine.analyze_compatibility(
-                        info_self[1], None, info_self[0], None, 
-                        mode=report_type, 
-                        additional_info={"gender": gender}
-                    )
+                with st.spinner("🔍 분석 중..."):
+                    report = ai_engine.analyze_compatibility(info_self[1], None, info_self[0], None, mode=report_type, additional_info={"gender": gender})
                 st.markdown("---")
                 st.markdown(report)
-                st.download_button(
-                    label="📥 분석 리포트 저장 (Markdown)", 
-                    data=report, 
-                    file_name=f"Self_Analysis_{report_type}_{emp_id}.md"
-                )
         st.markdown('</div>', unsafe_allow_html=True)
 
 def main():
