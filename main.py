@@ -193,80 +193,50 @@ def show_main_content(emp_id):
 
     with tab1:
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.subheader("📋 성향 암호화 코드 등록")
-        st.markdown('<div class="description">외부 LLM을 통해 분석된 본인의 고유 성향 코드를 등록하세요. 이 데이터는 파트너와 매칭될 때 시너지 리포트의 핵심 재료로 사용됩니다.</div>', unsafe_allow_html=True)
+        st.subheader("📋 내 성향 데이터 업데이트")
+        st.markdown('<div class="description">외부 LLM을 통해 분석된 본인의 고유 성향 코드를 등록하세요. 기존 데이터가 있다면 새로운 내용으로 업데이트됩니다.</div>', unsafe_allow_html=True)
         
-        with st.expander("🛠 분석용 프롬프트 생성기"):
-            st.write("아래 버튼을 눌러 분석 요청 문구를 복사한 후, ChatGPT나 Gemini에 붙여넣으세요.")
-            
-            # 프롬프트 본문
-            prompt_text = prompts.USER_ANALYSIS_PROMPT
-            
-            # 클립보드 복사를 위한 HTML/JS 컴포넌트
-            copy_code_html = f"""
-                <div style="margin-bottom: 10px;">
-                    <button onclick="copyToClipboard()" style="
-                        width: 100%;
-                        background-color: #E1002A;
-                        color: white;
-                        border: none;
-                        padding: 12px 20px;
-                        border-radius: 8px;
-                        font-weight: bold;
-                        cursor: pointer;
-                        font-size: 1rem;
-                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                    ">📋 분석 문구 복사하기 (Copy Prompt)</button>
-                </div>
-                <div id="prompt-container" style="
-                    font-size: 6px;
-                    color: #f0f0f0;
-                    background-color: #fafafa;
-                    padding: 5px;
-                    border-radius: 4px;
-                    border: 1px solid #eee;
-                    max-height: 40px;
-                    overflow: hidden;
-                    user-select: none;
-                ">
-                    {prompt_text}
-                </div>
-                <script>
-                    function copyToClipboard() {{
-                        const text = `{prompt_text}`;
-                        navigator.clipboard.writeText(text).then(function() {{
-                            alert('분석 문구가 복사되었습니다! 이제 GPT나 Gemini에 붙여넣으세요.');
-                        }}, function(err) {{
-                            console.error('복사 실패: ', err);
-                        }});
-                    }}
-                </script>
-            """
-            st.components.v1.html(copy_code_html, height=120)
-            st.caption("※ 버튼을 이용해 복사해 주세요.")
+        # 클립보드 복사를 위한 HTML/JS 컴포넌트 (버튼만 노출)
+        prompt_text = prompts.USER_ANALYSIS_PROMPT.replace("`", "\\`").replace("\n", "\\n")
+        copy_code_html = f"""
+            <div style="margin-bottom: 20px;">
+                <button onclick="copyToClipboard()" style="
+                    width: 100%;
+                    background-color: #E1002A;
+                    color: white;
+                    border: none;
+                    padding: 14px 20px;
+                    border-radius: 10px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    font-size: 1.1rem;
+                    box-shadow: 0 4px 12px rgba(225, 0, 42, 0.2);
+                    transition: all 0.2s;
+                ">📋 분석 문구 복사하기 (Copy Prompt)</button>
+            </div>
+            <script>
+                function copyToClipboard() {{
+                    const text = `{prompt_text}`;
+                    navigator.clipboard.writeText(text).then(function() {{
+                        alert('분석 문구가 복사되었습니다! 이제 GPT나 Gemini에 붙여넣으세요.');
+                    }}, function(err) {{
+                        console.error('복사 실패: ', err);
+                    }});
+                }}
+            </script>
+        """
+        st.components.v1.html(copy_code_html, height=80)
         
-        st.write("")
-        raw_input = st.text_area("분석 결과는 타인이 볼 수 없습니다.", height=150, placeholder="GPT/Gemini가 내뱉은 영문/숫자 결과 코드를 여기에 붙여넣으세요.")
+        raw_input = st.text_area("분석 결과 코드를 입력하세요", height=150, placeholder="GPT/Gemini가 내뱉은 영문/숫자 결과 코드를 여기에 붙여넣으세요.")
         if st.button("데이터 동기화"):
-            if not raw_input:
-                st.warning("결과 코드를 입력해주세요.")
-            else:
-                try:
-                    # GPT가 텍스트와 함께 섞어서 출력할 경우를 대비해 Base64 패턴 추출
-                    # 대략적인 Base64 패턴 (영문 대소문자, 숫자, +, /, = 포함)
-                    match = re.search(r'[A-Za-z0-9+/]{50,}=*', raw_input.replace('\n', '').replace(' ', ''))
-                    if match:
-                        clean_input = match.group(0)
-                        decoded_str = base64.b64decode(clean_input).decode('utf-8')
-                        json_data = json.loads(decoded_str)
-                        
-                        db.save_profile(emp_id, decoded_str)
-                        st.success("데이터 동기화 완료! 기존 정보가 최신 분석 결과로 업데이트되었습니다.")
-                        st.balloons()
-                    else:
-                        st.error("입력된 내용에서 유효한 분석 코드를 찾을 수 없습니다. GPT의 출력 결과 전체를 복사했는지 확인해주세요.")
-                except Exception as e:
-                    st.error(f"데이터 처리 중 오류가 발생했습니다: {str(e)}")
+            try:
+                decoded_str = base64.b64decode(raw_input).decode('utf-8')
+                json.loads(decoded_str)
+                db.save_profile(emp_id, decoded_str)
+                st.success("데이터가 안전하게 동기화되었습니다.")
+                st.balloons()
+            except:
+                st.error("올바른 코드 형식이 아닙니다.")
         st.markdown('</div>', unsafe_allow_html=True)
 
     with tab2:
@@ -324,15 +294,15 @@ def show_main_content(emp_id):
                 st.markdown("---")
                 superior = st.selectbox("누가 리더(상사)인가요?", [user_info[0], db.get_user_info(selected_other)[0]])
                 additional_info['superior_name'] = superior
-                additional_info['subordinate_name'] = [user_info[0], db.get_user_info(selected_other)[0]]
-                additional_info['subordinate_name'].remove(superior)
-                additional_info['subordinate_name'] = additional_info['subordinate_name'][0]
+                sub_list = [user_info[0], db.get_user_info(selected_other)[0]]
+                sub_list.remove(superior)
+                additional_info['subordinate_name'] = sub_list[0]
 
             if st.button("전문 AI 분석 시작", disabled=not can_proceed):
                 info_a = db.get_user_info(emp_id)
                 info_b = db.get_user_info(selected_other)
                 mode_map = {"직장 동료": "colleague", "연인 궁합": "couple", "상사-부하": "hierarchy"}
-                with st.status("🔍 정밀 분석 리포트 생성 중..."):
+                with st.spinner("🔍 정밀 분석 리포트 생성 중..."):
                     report = ai_engine.analyze_compatibility(info_a[1], info_b[1], info_a[0], info_b[0], mode=mode_map[mode], additional_info=additional_info)
                 st.markdown("---")
                 st.markdown(report)
@@ -365,7 +335,7 @@ def show_main_content(emp_id):
                     report_type = "self_swot"
             
             if report_type:
-                with st.status("🔍 AI가 심층 성향을 분석하고 있습니다..."):
+                with st.spinner("🔍 AI가 심층 성향을 분석하고 있습니다..."):
                     report = ai_engine.analyze_compatibility(
                         info_self[1], None, info_self[0], None, 
                         mode=report_type, 
@@ -378,7 +348,6 @@ def show_main_content(emp_id):
                     data=report, 
                     file_name=f"Self_Analysis_{report_type}_{emp_id}.md"
                 )
-        st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
 def main():

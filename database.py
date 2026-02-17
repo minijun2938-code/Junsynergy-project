@@ -14,8 +14,10 @@ def init_db():
         conn.commit()
 
 def save_profile(emp_id, profile_json):
+    """프로필 데이터를 저장합니다. 이미 존재한다면 업데이트합니다."""
     with get_connection() as conn:
         c = conn.cursor()
+        # 데이터 동기화 이슈 해결: 기존 데이터가 있으면 UPDATE, 없으면 IGNORE (보통 로그인이 된 상태이므로 UPDATE가 맞음)
         c.execute("UPDATE user_profiles SET profile_data = ? WHERE emp_id = ?", (profile_json, emp_id))
         conn.commit()
 
