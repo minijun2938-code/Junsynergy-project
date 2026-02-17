@@ -196,11 +196,57 @@ def show_main_content(emp_id):
         st.subheader("📋 성향 암호화 코드 등록")
         st.markdown('<div class="description">외부 LLM을 통해 분석된 본인의 고유 성향 코드를 등록하세요. 이 데이터는 파트너와 매칭될 때 시너지 리포트의 핵심 재료로 사용됩니다.</div>', unsafe_allow_html=True)
         
-        with st.expander("🛠 코드 생성을 위한 보안 프롬프트 복사"):
-            st.write("아래 프롬프트 전체를 복사하여 ChatGPT나 Gemini에 입력하세요. 분석 결과로 나오는 암호화 코드를 아래에 붙여넣어 주시면 됩니다.")
-            st.code(prompts.USER_ANALYSIS_PROMPT, language="text")
+        with st.expander("🛠 분석용 프롬프트 생성기"):
+            st.write("아래 버튼을 눌러 분석 요청 문구를 복사한 후, ChatGPT나 Gemini에 붙여넣으세요.")
+            
+            # 프롬프트 본문
+            prompt_text = prompts.USER_ANALYSIS_PROMPT
+            
+            # 클립보드 복사를 위한 HTML/JS 컴포넌트
+            copy_code_html = f"""
+                <div style="margin-bottom: 10px;">
+                    <button onclick="copyToClipboard()" style="
+                        width: 100%;
+                        background-color: #E1002A;
+                        color: white;
+                        border: none;
+                        padding: 12px 20px;
+                        border-radius: 8px;
+                        font-weight: bold;
+                        cursor: pointer;
+                        font-size: 1rem;
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                    ">📋 분석 문구 복사하기 (Copy Prompt)</button>
+                </div>
+                <div id="prompt-container" style="
+                    font-size: 6px;
+                    color: #f0f0f0;
+                    background-color: #fafafa;
+                    padding: 5px;
+                    border-radius: 4px;
+                    border: 1px solid #eee;
+                    max-height: 40px;
+                    overflow: hidden;
+                    user-select: none;
+                ">
+                    {prompt_text}
+                </div>
+                <script>
+                    function copyToClipboard() {{
+                        const text = `{prompt_text}`;
+                        navigator.clipboard.writeText(text).then(function() {{
+                            alert('분석 문구가 복사되었습니다! 이제 GPT나 Gemini에 붙여넣으세요.');
+                        }}, function(err) {{
+                            console.error('복사 실패: ', err);
+                        }});
+                    }}
+                </script>
+            """
+            st.components.v1.html(copy_code_html, height=120)
+            st.caption("※ 보안을 위해 문구는 아주 작게 표시됩니다. 버튼을 이용해 복사해 주세요.")
         
-        raw_input = st.text_area("보안 결과 코드 (Base64)", height=120, placeholder="영문/숫자로 구성된 결과 코드를 붙여넣으세요.")
+        st.write("")
+        raw_input = st.text_area("보안 결과 코드 (Base64)", height=150, placeholder="GPT/Gemini가 내뱉은 영문/숫자 결과 코드를 여기에 붙여넣으세요.")
         if st.button("데이터 동기화"):
             try:
                 decoded_str = base64.b64decode(raw_input).decode('utf-8')
