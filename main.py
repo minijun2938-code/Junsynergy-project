@@ -194,10 +194,24 @@ def show_main_content(emp_id):
     with tab1:
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("📋 내 성향 데이터 업데이트")
+        
+        # 마지막 동기화 정보 표시
+        user_info = db.get_user_info(emp_id)
+        if user_info and user_info[2]:
+            st.caption(f"⏱ 마지막 동기화: {user_info[2]} ({user_info[3]})")
+        else:
+            st.caption("⏱ 동기화 이력 없음")
+
         st.markdown('<div class="description">외부 LLM을 통해 분석된 본인의 고유 성향 코드를 등록하세요. 기존 데이터가 있다면 새로운 내용으로 업데이트됩니다.</div>', unsafe_allow_html=True)
         
+        # 사용할 LLM 선택
+        selected_llm = st.selectbox("사용 중인 LLM을 선택해 주세요", ["ChatGPT", "Gemini", "Claude", "기타"], index=0)
+        
         # 클립보드 복사를 위한 HTML/JS 컴포넌트 (버튼만 노출)
-        prompt_text = prompts.USER_ANALYSIS_PROMPT.replace("`", "\\`").replace("\n", "\\n")
+        # 프롬프트에 선택된 LLM 정보 주입
+        base_prompt = prompts.USER_ANALYSIS_PROMPT
+        dynamic_prompt = f"[Target LLM: {selected_llm}]\\n\\n" + base_prompt.replace("`", "\\`").replace("\n", "\\n")
+        
         copy_code_html = f"""
             <div style="margin-bottom: 20px;">
                 <button onclick="copyToClipboard()" style="
@@ -212,13 +226,13 @@ def show_main_content(emp_id):
                     font-size: 1.1rem;
                     box-shadow: 0 4px 12px rgba(225, 0, 42, 0.2);
                     transition: all 0.2s;
-                ">📋 분석 문구 복사하기 (Copy Prompt)</button>
+                ">📋 {selected_llm}용 분석 문구 복사하기</button>
             </div>
             <script>
                 function copyToClipboard() {{
-                    const text = `{prompt_text}`;
+                    const text = `{dynamic_prompt}`;
                     navigator.clipboard.writeText(text).then(function() {{
-                        alert('분석 문구가 복사되었습니다! 이제 GPT나 Gemini에 붙여넣으세요.');
+                        alert('{selected_llm}용 분석 문구가 복사되었습니다! 이제 GPT나 Gemini에 붙여넣으세요.');
                     }}, function(err) {{
                         console.error('복사 실패: ', err);
                     }});
@@ -229,14 +243,18 @@ def show_main_content(emp_id):
         
         raw_input = st.text_area("분석 결과 코드를 입력하세요", height=150, placeholder="GPT/Gemini가 내뱉은 영문/숫자 결과 코드를 여기에 붙여넣으세요.")
         if st.button("데이터 동기화"):
-            try:
-                decoded_str = base64.b64decode(raw_input).decode('utf-8')
-                json.loads(decoded_str)
-                db.save_profile(emp_id, decoded_str)
-                st.success("데이터가 안전하게 동기화되었습니다.")
-                st.balloons()
-            except:
-                st.error("올바른 코드 형식이 아닙니다.")
+            if not raw_input:
+                st.warning("코드를 입력해주세요.")
+            else:
+                try:
+                    decoded_str = base64.b64decode(raw_input).decode('utf-8')
+                    json.loads(decoded_str)
+                    db.save_profile(emp_id, decoded_str, llm_name=selected_llm)
+                    st.success(f"데이터가 {selected_llm} 기반으로 성공적으로 동기화되었습니다.")
+                    st.balloons()
+                    st.rerun()
+                except:
+                    st.error("올바른 코드 형식이 아닙니다.")
         st.markdown('</div>', unsafe_allow_html=True)
 
     with tab2:
