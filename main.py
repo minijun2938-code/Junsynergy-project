@@ -243,10 +243,10 @@ def show_main_content(emp_id):
                 </script>
             """
             st.components.v1.html(copy_code_html, height=120)
-            st.caption("※ 보안을 위해 문구는 아주 작게 표시됩니다. 버튼을 이용해 복사해 주세요.")
+            st.caption("※ 버튼을 이용해 복사해 주세요.")
         
         st.write("")
-        raw_input = st.text_area("보안 결과 코드 (Base64)", height=150, placeholder="GPT/Gemini가 내뱉은 영문/숫자 결과 코드를 여기에 붙여넣으세요.")
+        raw_input = st.text_area("분석 결과는 타인이 볼 수 없습니다.", height=150, placeholder="GPT/Gemini가 내뱉은 영문/숫자 결과 코드를 여기에 붙여넣으세요.")
         if st.button("데이터 동기화"):
             try:
                 decoded_str = base64.b64decode(raw_input).decode('utf-8')
