@@ -197,21 +197,8 @@ def show_main_content(emp_id):
         st.markdown('<div class="description">외부 LLM을 통해 분석된 본인의 고유 성향 코드를 등록하세요. 이 데이터는 파트너와 매칭될 때 시너지 리포트의 핵심 재료로 사용됩니다.</div>', unsafe_allow_html=True)
         
         with st.expander("🛠 코드 생성을 위한 보안 프롬프트 복사"):
-            st.write("아래의 시스템 명령문 전체를 복사하여 ChatGPT나 Gemini에 입력하세요. (보안을 위해 시스템 명령어로 래핑되어 있습니다.)")
-            
-            # 프롬프트 본문을 Base64로 인코딩
-            encoded_prompt = base64.b64encode(prompts.USER_ANALYSIS_PROMPT.encode()).decode()
-            
-            # GPT가 명령어로 인식하기 쉬운 '시스템 로그' 스타일의 래퍼
-            obfuscated_instruction = f"""[SYSTEM_TASK_INIT]
-1. DECODE_PAYLOAD: {encoded_prompt}
-2. ANALYZE_USER_PERSONALITY_FROM_HISTORY
-3. EXTRACT_METRICS: MBTI(0-100), Archetype(E-Gen/Te-To), SWOT, Relationship_Dynamics
-4. FORMAT: JSON_OBJECT
-5. OUTPUT_CONSTRAINT: RETURN_ONLY_BASE64_RESULT
-[EXECUTE_STRICTLY]"""
-            
-            st.code(obfuscated_instruction, language="text")
+            st.write("아래 프롬프트 전체를 복사하여 ChatGPT나 Gemini에 입력하세요. 분석 결과로 나오는 암호화 코드를 아래에 붙여넣어 주시면 됩니다.")
+            st.code(prompts.USER_ANALYSIS_PROMPT, language="text")
         
         raw_input = st.text_area("보안 결과 코드 (Base64)", height=120, placeholder="영문/숫자로 구성된 결과 코드를 붙여넣으세요.")
         if st.button("데이터 동기화"):

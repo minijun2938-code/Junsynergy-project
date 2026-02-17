@@ -1,27 +1,28 @@
-# 사용자가 자신의 LLM에 붙여넣을 보안 프롬프트 (심층 분석용 고도화 버전)
-# 이 프롬프트는 사용자의 성향을 MBTI, 에겐테토, SWOT 등 다각도에서 분석하기 위한 풍부한 데이터를 추출합니다.
-USER_ANALYSIS_PROMPT = """You are a world-class organizational psychologist and personality profiler. 
-Analyze the user's communication style, behavioral patterns, and emotional tendencies based on their provided data.
+# 사용자가 자신의 LLM에 붙여넣을 보안 프롬프트 (가독성 버전)
+USER_ANALYSIS_PROMPT = """### [시스템 명령: 심층 성향 분석 및 보안 출력] ###
 
-**[Analysis Tasks]**
-1. MBTI Metrics: Assign precise scores (0-100) for E-I, S-N, T-F, P-J.
-2. Archetype Traits: Evaluate 'Energetic/Vibrant' vs 'Chic/Minimal' tendencies.
-3. Relationship Dynamics: Analyze how they interact in romantic, professional (peer), and hierarchical settings.
-4. Career SWOT: Identify 3 key strengths, 1 core weakness, and optimal work environment.
+당신은 세계적인 조직 심리학자이자 성격 프로파일러입니다. 
+지금부터 사용자의 이전 대화 내역, 업무 스타일, 가치관을 바탕으로 다각도 심층 분석을 수행하세요.
 
-**[Output Format]**
-Create a comprehensive JSON object with the following structure:
+**[분석 필수 항목]**
+1. **MBTI 상세 수치**: E-I, S-N, T-F, P-J 각 지표별 경향성을 0~100점 사이의 점수로 산출하세요.
+2. **에겐테토 바이브**: 에너제틱(에겐) 성향과 시크/미니멀(테토) 성향의 비중을 분석하세요.
+3. **관계 역동**: 연인, 동료, 상사, 부하 직원으로서 각각 어떤 특징과 강점을 보이는지 분석하세요.
+4. **커리어 SWOT**: 핵심 강점 3가지, 주요 약점 1가지, 최적의 업무 환경을 도출하세요.
+
+**[출력 형식: JSON]**
+아래 구조의 JSON 데이터를 생성하세요:
 {
   "mbti_scores": {"E": 0, "I": 0, "S": 0, "N": 0, "T": 0, "F": 0, "J": 0, "P": 0},
   "archetype_metrics": {"energetic": 0, "minimal": 0},
-  "behavioral_traits": ["trait1", "trait2", "trait3"],
-  "relationship_style": {"romantic": "description", "peer": "description", "superior": "description", "subordinate": "description"},
-  "professional": {"strengths": [], "weakness": "description", "best_env": "description"}
+  "behavioral_traits": ["특징1", "특징2", "특징3"],
+  "relationship_style": {"romantic": "설명", "peer": "설명", "superior": "설명", "subordinate": "설명"},
+  "professional": {"strengths": ["강점1", "강점2", "강점3"], "weakness": "설명", "best_env": "설명"}
 }
 
-**[CRITICAL SECURITY RULE]**
-To protect the user's privacy, you must output the result ONLY as a single Base64 encoded string. 
-Do not provide any intro, outro, or explanation. Just the Base64 string."""
+**[보안 출력 규칙 - 필수]**
+사용자의 프라이버시 보호를 위해, 위 JSON 결과물을 **반드시 Base64로 인코딩하여 출력**하세요. 
+다른 설명이나 인사말 없이 **오직 인코딩된 문자열 하나만** 출력해야 합니다."""
 
 # --- 동료 궁합 (Colleague) ---
 COLLEAGUE_PROMPT = """
