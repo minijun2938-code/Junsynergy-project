@@ -282,27 +282,45 @@ def show_main_content(emp_id):
 
     with tab4:
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.subheader("👤 내 성향 심층 분석")
-        st.markdown('<div class="description">타인과의 관계 이전에, 나 자신에 대한 깊은 통찰을 제공합니다.</div>', unsafe_allow_html=True)
+        st.subheader("👤 개인 성향 심층 분석")
+        st.markdown('<div class="description">본인의 데이터를 기반으로 MBTI 유형과 최신 트렌드 바이브를 정밀하게 진단합니다.</div>', unsafe_allow_html=True)
         
         info_self = db.get_user_info(emp_id)
         if not info_self[1]:
             st.warning("데이터 등록 탭에서 먼저 정보를 입력해주세요.")
         else:
-            gender = st.radio("성별 (아키타입 분석용)", ["남성", "여성"], horizontal=True)
+            gender = st.radio("성별 (에겐테토 분석용)", ["남성", "여성"], horizontal=True)
             st.write("")
             
-            c_s1, c_s2, c_s3 = st.columns(3)
+            # 버튼 3개를 하나의 로우에 꽉 차게 배치
+            btn_cols = st.columns(3)
             report_type = None
-            if c_s1.button("🧩 MBTI 분석"): report_type = "self_mbti"
-            if c_s2.button("🎭 MZ 아키타입"): report_type = "self_archetype"
-            if c_s3.button("🌟 장단점/강점"): report_type = "self_swot"
+            
+            with btn_cols[0]:
+                if st.button("🧩 MBTI 분석", use_container_width=True):
+                    report_type = "self_mbti"
+            with btn_cols[1]:
+                if st.button("🎭 에겐테토분석", use_container_width=True):
+                    report_type = "self_archetype"
+            with btn_cols[2]:
+                if st.button("🌟 장단점 분석", use_container_width=True):
+                    report_type = "self_swot"
             
             if report_type:
-                with st.status("🔍 데이터 연산 중..."):
-                    report = ai_engine.analyze_compatibility(info_self[1], None, info_self[0], None, mode=report_type, additional_info={"gender": gender})
+                with st.status("🔍 AI가 심층 성향을 분석하고 있습니다..."):
+                    report = ai_engine.analyze_compatibility(
+                        info_self[1], None, info_self[0], None, 
+                        mode=report_type, 
+                        additional_info={"gender": gender}
+                    )
                 st.markdown("---")
                 st.markdown(report)
+                st.download_button(
+                    label="📥 분석 리포트 저장 (Markdown)", 
+                    data=report, 
+                    file_name=f"Self_Analysis_{report_type}_{emp_id}.md"
+                )
+        st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
 def main():
