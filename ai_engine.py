@@ -11,6 +11,9 @@ def analyze_compatibility(data_a, data_b, name_a, name_b, mode="colleague", addi
     if not api_key:
         return "⚠️ API 키가 설정되지 않았습니다. 관리자에게 문의하세요."
 
+    if additional_info is None:
+        additional_info = {}
+
     # DNS 문제를 해결하기 위해 transport='rest' 사용, 일관성을 위해 온도를 낮게 설정
     genai.configure(api_key=api_key, transport='rest')
     model = genai.GenerativeModel(
@@ -80,4 +83,9 @@ def analyze_compatibility(data_a, data_b, name_a, name_b, mode="colleague", addi
     except exceptions.DeadlineExceeded:
         return "⚠️ 분석 시간이 너무 오래 걸려 중단되었습니다. 잠시 후 다시 시도해 주세요."
     except Exception as e:
-        return f"⚠️ 분석 중 예상치 못한 오류가 발생했습니다: {str(e)}"
+        err_msg = str(e)
+        if "429" in err_msg or "Resource exhausted" in err_msg:
+            return "⚠️ 짧은 시간에 너무 많은 요청이 있었습니다. 5~10초 후 다시 시도해 주세요."
+        elif "401" in err_msg or "Unauthenticated" in err_msg:
+            return "⚠️ API 키가 유효하지 않거나 만료되었습니다. 설정을 확인해 주세요."
+        return "⚠️ 분석 중 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
