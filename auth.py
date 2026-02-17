@@ -16,6 +16,7 @@ def register_user(emp_id, password, name):
     with get_connection() as conn:
         c = conn.cursor()
         try:
+            # INSERT OR IGNORE 대신 명확한 에러 처리를 위해 INSERT 사용
             c.execute("INSERT INTO user_profiles (emp_id, password, name) VALUES (?, ?, ?)", 
                       (emp_id, hash_password(password), name))
             conn.commit()

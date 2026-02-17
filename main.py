@@ -248,14 +248,25 @@ def show_main_content(emp_id):
         st.write("")
         raw_input = st.text_area("분석 결과는 타인이 볼 수 없습니다.", height=150, placeholder="GPT/Gemini가 내뱉은 영문/숫자 결과 코드를 여기에 붙여넣으세요.")
         if st.button("데이터 동기화"):
-            try:
-                decoded_str = base64.b64decode(raw_input).decode('utf-8')
-                json.loads(decoded_str)
-                db.save_profile(emp_id, decoded_str)
-                st.success("데이터가 안전하게 저장되었습니다.")
-                st.balloons()
-            except:
-                st.error("올바른 코드 형식이 아닙니다.")
+            if not raw_input:
+                st.warning("결과 코드를 입력해주세요.")
+            else:
+                try:
+                    # GPT가 텍스트와 함께 섞어서 출력할 경우를 대비해 Base64 패턴 추출
+                    # 대략적인 Base64 패턴 (영문 대소문자, 숫자, +, /, = 포함)
+                    match = re.search(r'[A-Za-z0-9+/]{50,}=*', raw_input.replace('\n', '').replace(' ', ''))
+                    if match:
+                        clean_input = match.group(0)
+                        decoded_str = base64.b64decode(clean_input).decode('utf-8')
+                        json_data = json.loads(decoded_str)
+                        
+                        db.save_profile(emp_id, decoded_str)
+                        st.success("데이터 동기화 완료! 기존 정보가 최신 분석 결과로 업데이트되었습니다.")
+                        st.balloons()
+                    else:
+                        st.error("입력된 내용에서 유효한 분석 코드를 찾을 수 없습니다. GPT의 출력 결과 전체를 복사했는지 확인해주세요.")
+                except Exception as e:
+                    st.error(f"데이터 처리 중 오류가 발생했습니다: {str(e)}")
         st.markdown('</div>', unsafe_allow_html=True)
 
     with tab2:
