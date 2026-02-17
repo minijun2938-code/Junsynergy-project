@@ -1,5 +1,6 @@
 import os
 import google.generativeai as genai
+from google.api_core import exceptions
 from dotenv import load_dotenv
 import prompts
 
@@ -8,7 +9,7 @@ api_key = os.getenv("GOOGLE_API_KEY")
 
 def analyze_compatibility(data_a, data_b, name_a, name_b, mode="colleague", additional_info=None):
     if not api_key:
-        return "❌ API 키가 설정되지 않았습니다."
+        return "⚠️ API 키가 설정되지 않았습니다. 관리자에게 문의하세요."
 
     # DNS 문제를 해결하기 위해 transport='rest' 사용, 일관성을 위해 온도를 낮게 설정
     genai.configure(api_key=api_key, transport='rest')
@@ -70,5 +71,13 @@ def analyze_compatibility(data_a, data_b, name_a, name_b, mode="colleague", addi
     try:
         response = model.generate_content([system_prompt, user_content])
         return response.text
+    except exceptions.ResourceExhausted:
+        return "⚠️ 짧은 시간에 너무 많은 요청이 있었습니다. 5~10초 후 다시 시도해 주세요."
+    except exceptions.Unauthenticated:
+        return "⚠️ API 키가 유효하지 않거나 만료되었습니다. 설정을 확인해 주세요."
+    except exceptions.InvalidArgument:
+        return "⚠️ 입력된 데이터 형식이 올바르지 않거나 데이터가 너무 큽니다."
+    except exceptions.DeadlineExceeded:
+        return "⚠️ 분석 시간이 너무 오래 걸려 중단되었습니다. 잠시 후 다시 시도해 주세요."
     except Exception as e:
-        return f"⚠️ AI 분석 중 오류 발생: {str(e)}"
+        return f"⚠️ 분석 중 예상치 못한 오류가 발생했습니다: {str(e)}"
