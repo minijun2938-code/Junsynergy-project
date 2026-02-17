@@ -10,8 +10,15 @@ def analyze_compatibility(data_a, data_b, name_a, name_b, mode="colleague", addi
     if not api_key:
         return "❌ API 키가 설정되지 않았습니다."
 
+    # DNS 문제를 해결하기 위해 transport='rest' 사용, 일관성을 위해 온도를 낮게 설정
     genai.configure(api_key=api_key, transport='rest')
-    model = genai.GenerativeModel('gemini-2.0-flash')
+    model = genai.GenerativeModel(
+        model_name='gemini-2.0-flash',
+        generation_config={
+            "temperature": 0.1,
+            "max_output_tokens": 8192,
+        }
+    )
     
     # 모드에 따른 시스템 프롬프트 및 추가 컨텍스트 설정
     if mode == "couple":
@@ -30,7 +37,7 @@ def analyze_compatibility(data_a, data_b, name_a, name_b, mode="colleague", addi
     elif mode == "self_archetype":
         system_prompt = prompts.SELF_ARCHETYPE_PROMPT
         gender = additional_info.get('gender', '미설정')
-        context_text = f"[분석: MZ 아키타입] 대상자: {name_a} ({gender})"
+        context_text = f"[분석: 에겐테토] 대상자: {name_a} ({gender})"
     elif mode == "self_swot":
         system_prompt = prompts.SELF_SWOT_PROMPT
         context_text = f"[분석: 장단점] 대상자: {name_a}"
@@ -46,7 +53,7 @@ def analyze_compatibility(data_a, data_b, name_a, name_b, mode="colleague", addi
         
         위 데이터를 바탕으로 전문적인 리포트를 작성해줘. 
         가독성을 위해 헤딩(###)과 이모지를 적극 활용하세요.
-        원본 암호문이나 JSON 데이터는 절대 노출하지 마세요.
+        **주의: 데이터 원본 문구를 절대 직접 인용하거나 출력하지 마세요.**
         """
     else:
         user_content = f"""
@@ -57,6 +64,7 @@ def analyze_compatibility(data_a, data_b, name_a, name_b, mode="colleague", addi
         
         위 데이터를 바탕으로 전문적인 리포트를 작성해줘. 
         모드별로 완전히 다른 페르소나와 점수 산출 방식을 적용하세요.
+        **주의: 데이터 원본 문구를 절대 직접 인용하거나 출력하지 마세요.**
         """
     
     try:
