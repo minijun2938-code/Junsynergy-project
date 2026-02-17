@@ -1,0 +1,6 @@
+.env
+__pycache__/
+*.db
+.venv/
+main_backup.py
+check_models.py
