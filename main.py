@@ -321,10 +321,14 @@ def show_main_content(emp_id):
         if pending_requests:
             st.subheader(f"🔔 받은 매칭 요청 ({len(pending_requests)})")
             for req in pending_requests:
+                req_id_val = req[0]
+                u_info = db.get_user_info(req_id_val)
+                sender_display = f"{u_info[0]} ({req_id_val})" if u_info else req_id_val
+                
                 c1, c2 = st.columns([3, 1])
-                c1.write(f"👉 **{req[0]}** 님이 매칭을 요청했습니다.")
-                if c2.button("수락", key=f"acc_{req[0]}"):
-                    db.accept_match_request(req[0], emp_id)
+                c1.write(f"👉 **{sender_display}** 님이 매칭을 요청했습니다.")
+                if c2.button("수락", key=f"acc_{req_id_val}"):
+                    db.accept_match_request(req_id_val, emp_id)
                     st.rerun()
             st.divider()
 
@@ -332,15 +336,20 @@ def show_main_content(emp_id):
         if sent_requests:
             st.subheader(f"📨 보낸 매칭 요청 ({len(sent_requests)})")
             for req in sent_requests:
+                target_id_val = req[0]
+                t_info = db.get_user_info(target_id_val)
+                target_display = f"{t_info[0]} ({target_id_val})" if t_info else target_id_val
+                
                 c1, c2 = st.columns([3, 1])
-                c1.write(f"⌛ **{req[0]}** 님께 요청을 보냈습니다.")
-                if c2.button("철회", key=f"can_{req[0]}", help="상대방이 수락하기 전까지 취소 가능"):
-                    db.cancel_match_request(emp_id, req[0])
+                c1.write(f"⌛ **{target_display}** 님께 요청을 보냈습니다.")
+                if c2.button("철회", key=f"can_{target_id_val}", help="상대방이 수락하기 전까지 취소 가능"):
+                    db.cancel_match_request(emp_id, target_id_val)
                     st.toast("요청이 철회되었습니다.")
                     st.rerun()
             st.divider()
 
         st.subheader("➕ 새로운 파트너 매칭")
+        st.caption("💡 상대방이 아직 가입하지 않았더라도 사번이 정확하면 요청을 보낼 수 있습니다.")
         target_id = st.text_input("상대방 사번", placeholder="slXXXXX")
         if st.button("매칭 요청 발송"):
             if not validate_emp_id(target_id):
