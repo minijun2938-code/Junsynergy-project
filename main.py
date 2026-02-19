@@ -214,53 +214,60 @@ def show_main_content(emp_id):
         st.components.v1.html(copy_code_html, height=80)
         
         raw_input = st.text_area("분석 결과는 타인이 볼 수 없습니다.", height=150, placeholder="영문/숫자 결과 코드를 붙여넣으세요.")
-        if st.button("데이터 동기화"):
-            if not raw_input:
-                st.warning("코드를 입력해주세요.")
-            else:
-                try:
-                    # 1. 전처리: 불필요한 마크다운 코드 블록 태그 및 공백/줄바꿈 제거
-                    cleaned_input = raw_input.strip()
-                    if cleaned_input.startswith("```"):
-                        cleaned_input = re.sub(r'^```[a-zA-Z0-9]*\n|```$', '', cleaned_input, flags=re.MULTILINE).strip()
-                    
-                    # Base64 문자열 내의 모든 공백 및 개행 제거 (더 견고한 처리)
-                    cleaned_input = "".join(cleaned_input.split())
-                    
-                    # 2. Base64 디코딩 (Padding 보정 포함)
-                    missing_padding = len(cleaned_input) % 4
-                    if missing_padding:
-                        cleaned_input += '=' * (4 - missing_padding)
-                    
-                    decoded_bytes = base64.b64decode(cleaned_input)
-                    
-                    # 3. 인코딩 감지 및 변환 (utf-8, cp949, euc-kr 등 대응)
+        
+        sync_col1, sync_col2 = st.columns([1, 1])
+        with sync_col1:
+            if st.button("데이터 동기화", use_container_width=True):
+                if not raw_input:
+                    st.warning("코드를 입력해주세요.")
+                else:
                     try:
-                        decoded_str = decoded_bytes.decode('utf-8')
-                    except UnicodeDecodeError:
+                        # 1. 전처리: 불필요한 마크다운 코드 블록 태그 및 공백/줄바꿈 제거
+                        cleaned_input = raw_input.strip()
+                        if cleaned_input.startswith("```"):
+                            cleaned_input = re.sub(r'^```[a-zA-Z0-9]*\n|```$', '', cleaned_input, flags=re.MULTILINE).strip()
+                        
+                        # Base64 문자열 내의 모든 공백 및 개행 제거 (더 견고한 처리)
+                        cleaned_input = "".join(cleaned_input.split())
+                        
+                        # 2. Base64 디코딩 (Padding 보정 포함)
+                        missing_padding = len(cleaned_input) % 4
+                        if missing_padding:
+                            cleaned_input += '=' * (4 - missing_padding)
+                        
+                        decoded_bytes = base64.b64decode(cleaned_input)
+                        
+                        # 3. 인코딩 감지 및 변환 (utf-8, cp949, euc-kr 등 대응)
                         try:
-                            decoded_str = decoded_bytes.decode('cp949') # 한글 윈도우 환경 고려
+                            decoded_str = decoded_bytes.decode('utf-8')
                         except UnicodeDecodeError:
-                            decoded_str = decoded_bytes.decode('utf-8', errors='replace') # 깨진 글자 무시하고 최대한 복구
-                    
-                    # 4. JSON 검증 및 저장
-                    # LLM이 JSON 형식을 정확히 지키지 못했을 경우를 대비해 JSON 부분만 추출 시도 (유연성 확보)
-                    try:
-                        json_data = json.loads(decoded_str)
-                    except json.JSONDecodeError:
-                        # JSON 시작과 끝 부분을 찾아 재시도
-                        match = re.search(r'\{.*\}', decoded_str, re.DOTALL)
-                        if match:
-                            json_data = json.loads(match.group())
-                        else:
-                            raise ValueError("JSON 형식을 찾을 수 없습니다.")
+                            try:
+                                decoded_str = decoded_bytes.decode('cp949') # 한글 윈도우 환경 고려
+                            except UnicodeDecodeError:
+                                decoded_str = decoded_bytes.decode('utf-8', errors='replace') # 깨진 글자 무시하고 최대한 복구
+                        
+                        # 4. JSON 검증 및 저장
+                        try:
+                            json_data = json.loads(decoded_str)
+                        except json.JSONDecodeError:
+                            match = re.search(r'\{.*\}', decoded_str, re.DOTALL)
+                            if match:
+                                json_data = json.loads(match.group())
+                            else:
+                                raise ValueError("JSON 형식을 찾을 수 없습니다.")
 
-                    db.save_profile(emp_id, json.dumps(json_data, ensure_ascii=False), llm_name=selected_llm)
-                    st.success("데이터가 성공적으로 동기화되었습니다.")
-                    st.balloons()
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"유효하지 않은 코드 형식입니다. (상세: {str(e)})")
+                        db.save_profile(emp_id, json.dumps(json_data, ensure_ascii=False), llm_name=selected_llm)
+                        st.session_state.sync_success = True
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"유효하지 않은 코드 형식입니다. (상세: {str(e)})")
+        
+        with sync_col2:
+            if st.session_state.get('sync_success'):
+                st.markdown('<div style="color: #10b981; font-weight: bold; padding: 0.8rem 0;">✅ 데이터 동기화 성공!</div>', unsafe_allow_html=True)
+                # 메시지 표시 후 상태 초기화 (원하는 경우)
+                # st.session_state.sync_success = False 
+        
         st.markdown('</div>', unsafe_allow_html=True)
 
     with tab2:
