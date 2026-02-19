@@ -100,6 +100,23 @@ def set_page_style():
             color: inherit;
         }
 
+        /* 분석 대상 삭제 버튼 스타일링 */
+        div[data-testid="stColumn"]:nth-child(2) button[kind="secondary"] {
+            border: none;
+            background: transparent;
+            color: #ef4444;
+            font-size: 1.5rem;
+            height: auto;
+            padding: 0;
+            margin-top: 5px;
+        }
+        div[data-testid="stColumn"]:nth-child(2) button[kind="secondary"]:hover {
+            color: #f87171;
+            background: transparent;
+            box-shadow: none;
+            transform: none;
+        }
+
         /* 히스토리 모달 내부 스타일 */
         .history-item {
             padding: 1rem;
@@ -356,12 +373,11 @@ def show_main_content(emp_id):
             if not partner_options:
                 st.warning("유효한 파트너 정보를 불러올 수 없습니다.")
             else:
-                col_sel, col_del = st.columns([4, 1])
+                col_sel, col_del = st.columns([12, 1])
                 with col_sel:
-                    selected_label = st.selectbox("분석 대상 선택", list(partner_options.keys()))
+                    selected_label = st.selectbox("분석 대상 선택", list(partner_options.keys()), label_visibility="collapsed")
                 with col_del:
-                    st.write("") # 라벨 높이 맞춤
-                    if st.button("❌", help="목록에서 삭제"):
+                    if st.button("×", help="목록에서 삭제", key="del_partner"):
                         db.remove_match(emp_id, partner_options[selected_label])
                         st.rerun()
                 
