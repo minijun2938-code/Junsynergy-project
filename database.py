@@ -29,6 +29,15 @@ def init_db():
         
         c.execute('''CREATE TABLE IF NOT EXISTS matches 
                      (req_id TEXT, target_id TEXT, status TEXT, UNIQUE(req_id, target_id))''')
+        
+        # 분석 리포트 히스토리 테이블 추가
+        c.execute('''CREATE TABLE IF NOT EXISTS analysis_history 
+                     (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      emp_id TEXT,
+                      target_id TEXT,
+                      mode TEXT,
+                      report TEXT,
+                      created_at TEXT)''')
         conn.commit()
 
 def save_profile(emp_id, profile_json, llm_name=None):
@@ -72,6 +81,13 @@ def cancel_match_request(req_id, target_id):
         c.execute("DELETE FROM matches WHERE req_id=? AND target_id=? AND status='Pending'", (req_id, target_id))
         conn.commit()
 
+def remove_match(id_a, id_b):
+    """이미 수락된 매칭 관계를 삭제합니다."""
+    with get_connection() as conn:
+        c = conn.cursor()
+        c.execute("DELETE FROM matches WHERE (req_id=? AND target_id=?) OR (req_id=? AND target_id=?)", (id_a, id_b, id_b, id_a))
+        conn.commit()
+
 def get_sent_requests(emp_id):
     """내가 보낸 대기 중인 요청 목록을 가져옵니다."""
     with get_connection() as conn:
@@ -90,3 +106,25 @@ def get_team_members(team_name):
     with get_connection() as conn:
         c = conn.cursor()
         return c.execute("SELECT name, profile_data, emp_id FROM user_profiles WHERE team_name=? AND profile_data IS NOT NULL", (team_name,)).fetchall()
+
+def save_analysis_report(emp_id, target_id, mode, report):
+    """분석된 리포트를 저장합니다."""
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    with get_connection() as conn:
+        c = conn.cursor()
+        c.execute("INSERT INTO analysis_history (emp_id, target_id, mode, report, created_at) VALUES (?, ?, ?, ?, ?)",
+                  (emp_id, target_id, mode, report, now))
+        conn.commit()
+
+def get_analysis_history(emp_id):
+    """사용자의 최근 분석 히스토리를 가져옵니다."""
+    with get_connection() as conn:
+        c = conn.cursor()
+        # target_id가 NULL인 경우는 '내 성향 분석'
+        return c.execute("""
+            SELECT h.target_id, u.name, h.mode, h.report, h.created_at 
+            FROM analysis_history h
+            LEFT JOIN user_profiles u ON h.target_id = u.emp_id
+            WHERE h.emp_id=? 
+            ORDER BY h.created_at DESC LIMIT 20
+        """, (emp_id,)).fetchall()

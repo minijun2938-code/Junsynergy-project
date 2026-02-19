@@ -11,6 +11,8 @@ from datetime import datetime
 # --- UI 세션 상태 초기화 ---
 if 'view' not in st.session_state:
     st.session_state.view = 'login'
+if 'sync_success' not in st.session_state:
+    st.session_state.sync_success = False
 
 def set_page_style():
     """다크모드 완벽 대응 및 SaaS 스타일 UI"""
@@ -97,6 +99,12 @@ def set_page_style():
         [data-testid="stMarkdownContainer"] p {
             color: inherit;
         }
+
+        /* 히스토리 모달 내부 스타일 */
+        .history-item {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(128,128,128,0.2);
+        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -152,6 +160,18 @@ def signup_dialog():
                 st.success("가입 성공! 로그인을 진행해주세요.")
                 st.rerun()
 
+@st.dialog("📊 분석 히스토리")
+def show_history_dialog(emp_id):
+    history = db.get_analysis_history(emp_id)
+    if not history:
+        st.info("아직 분석 내역이 없습니다.")
+        return
+    
+    for h_target_id, h_target_name, h_mode, h_report, h_date in history:
+        with st.expander(f"📅 {h_date} | {h_mode} ({h_target_name if h_target_name else '본인'})"):
+            st.markdown(h_report)
+            st.divider()
+
 def show_main_content(emp_id):
     user_info = db.get_user_info(emp_id)
     # user_info: (name, profile_data, last_sync, llm_name, team_name)
@@ -175,8 +195,14 @@ def show_main_content(emp_id):
 
     with tab1:
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.subheader("📋 내 성향 데이터 업데이트")
         
+        col_title, col_hist = st.columns([3, 1])
+        with col_title:
+            st.subheader("📋 내 성향 데이터 업데이트")
+        with col_hist:
+            if st.button("📜 히스토리", key="view_history"):
+                show_history_dialog(emp_id)
+
         if user_info and user_info[2]:
             st.caption(f"⏱ 마지막 동기화: {user_info[2]} ({user_info[3]})")
         else:
@@ -204,7 +230,7 @@ def show_main_content(emp_id):
             </div>
             <script>
                 function copyToClipboard() {{
-                    const text = `[Target LLM: {selected_llm}]\\n\\n{prompt_text}`;
+                    const text = `{prompt_text}`;
                     navigator.clipboard.writeText(text).then(function() {{
                         alert('{selected_llm}용 분석 문구가 복사되었습니다!');
                     }});
@@ -265,8 +291,6 @@ def show_main_content(emp_id):
         with sync_col2:
             if st.session_state.get('sync_success'):
                 st.markdown('<div style="color: #10b981; font-weight: bold; padding: 0.8rem 0;">✅ 데이터 동기화 성공!</div>', unsafe_allow_html=True)
-                # 메시지 표시 후 상태 초기화 (원하는 경우)
-                # st.session_state.sync_success = False 
         
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -325,7 +349,6 @@ def show_main_content(emp_id):
             partner_options = {}
             for oid in other_ids:
                 u_info = db.get_user_info(oid)
-                # u_info가 없을 경우 대비 (삭제된 유저 등)
                 if u_info:
                     display_label = f"{u_info[0]} ({oid})"
                     partner_options[display_label] = oid
@@ -333,7 +356,15 @@ def show_main_content(emp_id):
             if not partner_options:
                 st.warning("유효한 파트너 정보를 불러올 수 없습니다.")
             else:
-                selected_label = st.selectbox("분석 대상 선택", list(partner_options.keys()))
+                col_sel, col_del = st.columns([4, 1])
+                with col_sel:
+                    selected_label = st.selectbox("분석 대상 선택", list(partner_options.keys()))
+                with col_del:
+                    st.write("") # 라벨 높이 맞춤
+                    if st.button("❌", help="목록에서 삭제"):
+                        db.remove_match(emp_id, partner_options[selected_label])
+                        st.rerun()
+                
                 selected_other = partner_options[selected_label]
                 
                 st.write("")
@@ -362,6 +393,8 @@ def show_main_content(emp_id):
                     mode_map = {"직장 동료": "colleague", "연인 궁합": "couple", "상사-부하": "hierarchy"}
                     with st.spinner("🔍 분석 중..."):
                         report = ai_engine.analyze_compatibility(info_a[1], info_b[1], info_a[0], info_b[0], mode=mode_map[mode], additional_info=additional_info)
+                        # 히스토리 저장
+                        db.save_analysis_report(emp_id, selected_other, mode, report)
                     st.markdown("---")
                     st.markdown(report)
         st.markdown('</div>', unsafe_allow_html=True)
@@ -386,12 +419,10 @@ def show_main_content(emp_id):
                 
                 if st.button("🚀 팀 전체 시너지 분석"):
                     with st.spinner("팀 역학 관계 및 시너지 분석 중..."):
-                        # 멤버 데이터를 AI 엔진에 전달 (튜플 리스트 그대로 전달)
-                        # 필요한 것: name, profile_data
-                        # team_members 구조: [(name, data, id), ...]
-                        # ai_engine 함수 호출
                         data_for_ai = [(m[0], m[1], m[2]) for m in team_members]
                         report = ai_engine.analyze_team_synergy(data_for_ai, user_team, leader_name)
+                        # 팀 히스토리는 target_id를 팀명으로 저장하거나 NULL로 처리 가능 (여기선 팀명으로)
+                        db.save_analysis_report(emp_id, user_team, "Team Analysis", report)
                     
                     st.markdown("---")
                     st.markdown(report)
@@ -415,6 +446,8 @@ def show_main_content(emp_id):
             if report_type:
                 with st.spinner("🔍 분석 중..."):
                     report = ai_engine.analyze_compatibility(info_self[1], None, info_self[0], None, mode=report_type, additional_info={"gender": gender})
+                    # 본인 분석 히스토리 저장 (target_id = NULL)
+                    db.save_analysis_report(emp_id, None, report_type, report)
                 st.markdown("---")
                 st.markdown(report)
         st.markdown('</div>', unsafe_allow_html=True)
