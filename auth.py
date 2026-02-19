@@ -12,13 +12,13 @@ def check_login(emp_id, password):
             return user[0] == hash_password(password)
         return None
 
-def register_user(emp_id, password, name):
+def register_user(emp_id, password, name, team_name):
     with get_connection() as conn:
         c = conn.cursor()
         try:
             # INSERT OR IGNORE 대신 명확한 에러 처리를 위해 INSERT 사용
-            c.execute("INSERT INTO user_profiles (emp_id, password, name) VALUES (?, ?, ?)", 
-                      (emp_id, hash_password(password), name))
+            c.execute("INSERT INTO user_profiles (emp_id, password, name, team_name) VALUES (?, ?, ?, ?)", 
+                      (emp_id, hash_password(password), name, team_name))
             conn.commit()
             return True
         except:

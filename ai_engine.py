@@ -7,13 +7,9 @@ import prompts
 load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
 
-def analyze_compatibility(data_a, data_b, name_a, name_b, mode="colleague", additional_info=None):
+def init_genai():
     if not api_key:
-        return "⚠️ API 키가 설정되지 않았습니다. 관리자에게 문의하세요."
-
-    if additional_info is None:
-        additional_info = {}
-
+        return None
     # DNS 문제를 해결하기 위해 transport='rest' 사용, 일관성을 위해 온도를 낮게 설정
     genai.configure(api_key=api_key, transport='rest')
     model = genai.GenerativeModel(
@@ -23,7 +19,16 @@ def analyze_compatibility(data_a, data_b, name_a, name_b, mode="colleague", addi
             "max_output_tokens": 8192,
         }
     )
+    return model
+
+def analyze_compatibility(data_a, data_b, name_a, name_b, mode="colleague", additional_info=None):
+    if not api_key:
+        return "⚠️ API 키가 설정되지 않았습니다. 관리자에게 문의하세요."
     
+    model = init_genai()
+    if additional_info is None:
+        additional_info = {}
+
     # 모드에 따른 시스템 프롬프트 및 추가 컨텍스트 설정
     if mode == "couple":
         system_prompt = prompts.COUPLE_PROMPT
@@ -74,18 +79,42 @@ def analyze_compatibility(data_a, data_b, name_a, name_b, mode="colleague", addi
     try:
         response = model.generate_content([system_prompt, user_content])
         return response.text
-    except exceptions.ResourceExhausted:
-        return "⚠️ 짧은 시간에 너무 많은 요청이 있었습니다. 5~10초 후 다시 시도해 주세요."
-    except exceptions.Unauthenticated:
-        return "⚠️ API 키가 유효하지 않거나 만료되었습니다. 설정을 확인해 주세요."
-    except exceptions.InvalidArgument:
-        return "⚠️ 입력된 데이터 형식이 올바르지 않거나 데이터가 너무 큽니다."
-    except exceptions.DeadlineExceeded:
-        return "⚠️ 분석 시간이 너무 오래 걸려 중단되었습니다. 잠시 후 다시 시도해 주세요."
     except Exception as e:
-        err_msg = str(e)
-        if "429" in err_msg or "Resource exhausted" in err_msg:
-            return "⚠️ 짧은 시간에 너무 많은 요청이 있었습니다. 5~10초 후 다시 시도해 주세요."
-        elif "401" in err_msg or "Unauthenticated" in err_msg:
-            return "⚠️ API 키가 유효하지 않거나 만료되었습니다. 설정을 확인해 주세요."
-        return "⚠️ 분석 중 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
+        return handle_ai_error(e)
+
+def analyze_team_synergy(team_members, team_name, leader_name):
+    if not api_key:
+        return "⚠️ API 키가 설정되지 않았습니다. 관리자에게 문의하세요."
+    
+    model = init_genai()
+    
+    # 멤버 데이터를 문자열로 변환
+    members_data_str = ""
+    for member in team_members:
+        # member: (name, profile_data, emp_id)
+        role = "(리더)" if member[0] == leader_name else "(팀원)"
+        members_data_str += f"- {member[0]} {role}: {member[1]}\n"
+
+    system_prompt = prompts.TEAM_SYNERGY_PROMPT.format(
+        team_name=team_name,
+        leader_name=leader_name,
+        members_data=members_data_str
+    )
+    
+    try:
+        response = model.generate_content(system_prompt)
+        return response.text
+    except Exception as e:
+        return handle_ai_error(e)
+
+def handle_ai_error(e):
+    err_msg = str(e)
+    if "429" in err_msg or "Resource exhausted" in err_msg:
+        return "⚠️ 짧은 시간에 너무 많은 요청이 있었습니다. 5~10초 후 다시 시도해 주세요."
+    elif "401" in err_msg or "Unauthenticated" in err_msg:
+        return "⚠️ API 키가 유효하지 않거나 만료되었습니다. 설정을 확인해 주세요."
+    elif "400" in err_msg or "InvalidArgument" in err_msg:
+        return "⚠️ 입력된 데이터 형식이 올바르지 않거나 데이터가 너무 큽니다."
+    elif "DeadlineExceeded" in err_msg:
+        return "⚠️ 분석 시간이 너무 오래 걸려 중단되었습니다. 잠시 후 다시 시도해 주세요."
+    return "⚠️ 분석 중 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."

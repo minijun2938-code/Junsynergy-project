@@ -11,6 +11,7 @@ def init_db():
                      (emp_id TEXT PRIMARY KEY, 
                       password TEXT, 
                       name TEXT, 
+                      team_name TEXT,
                       profile_data TEXT,
                       last_sync TEXT,
                       llm_name TEXT)''')
@@ -21,6 +22,9 @@ def init_db():
         except: pass
         try:
             c.execute("ALTER TABLE user_profiles ADD COLUMN llm_name TEXT")
+        except: pass
+        try:
+            c.execute("ALTER TABLE user_profiles ADD COLUMN team_name TEXT")
         except: pass
         
         c.execute('''CREATE TABLE IF NOT EXISTS matches 
@@ -42,7 +46,7 @@ def get_user_info(emp_id):
     """사번으로 이름과 성향 데이터를 한꺼번에 가져옵니다."""
     with get_connection() as conn:
         c = conn.cursor()
-        return c.execute("SELECT name, profile_data, last_sync, llm_name FROM user_profiles WHERE emp_id=?", (emp_id,)).fetchone()
+        return c.execute("SELECT name, profile_data, last_sync, llm_name, team_name FROM user_profiles WHERE emp_id=?", (emp_id,)).fetchone()
 
 def send_match_request(req_id, target_id):
     with get_connection() as conn:
@@ -80,3 +84,9 @@ def get_accepted_matches(emp_id):
         return c.execute("""SELECT req_id, target_id FROM matches 
                             WHERE (req_id=? OR target_id=?) AND status='Accepted'""", 
                          (emp_id, emp_id)).fetchall()
+
+def get_team_members(team_name):
+    """같은 팀 멤버들의 이름과 프로필 데이터를 가져옵니다."""
+    with get_connection() as conn:
+        c = conn.cursor()
+        return c.execute("SELECT name, profile_data, emp_id FROM user_profiles WHERE team_name=? AND profile_data IS NOT NULL", (team_name,)).fetchall()

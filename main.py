@@ -133,6 +133,7 @@ def signup_dialog():
     st.markdown("### 📝 구성원 등록")
     new_id = st.text_input("사번 (Emp ID)", placeholder="sl12345")
     new_name = st.text_input("이름", placeholder="성함을 입력하세요")
+    new_team = st.text_input("팀 이름", placeholder="ex) 기업문화팀 (정확히 입력)")
     new_pw = st.text_input("비밀번호", type="password")
     
     st.divider()
@@ -140,23 +141,27 @@ def signup_dialog():
     agreed = st.checkbox("약관에 동의합니다.")
     
     if st.button("가입 완료", use_container_width=True):
-        if not new_id or not new_name or not new_pw:
+        if not new_id or not new_name or not new_pw or not new_team:
             st.error("모든 정보를 입력해주세요.")
         elif not validate_emp_id(new_id):
             st.error("사번 형식이 올바르지 않습니다 (slXXXXX).")
         elif not agreed:
             st.warning("동의가 필요합니다.")
         else:
-            if auth.register_user(new_id, new_pw, new_name):
+            if auth.register_user(new_id, new_pw, new_name, new_team.strip()):
                 st.success("가입 성공! 로그인을 진행해주세요.")
                 st.rerun()
 
 def show_main_content(emp_id):
     user_info = db.get_user_info(emp_id)
+    # user_info: (name, profile_data, last_sync, llm_name, team_name)
+    user_name = user_info[0]
+    user_team = user_info[4] if len(user_info) > 4 else "미소속"
     
     with st.sidebar:
-        st.markdown(f"### 👤 {user_info[0]}님")
+        st.markdown(f"### 👤 {user_name}님")
         st.caption(f"사번: {emp_id}")
+        st.caption(f"소속: {user_team}")
         st.divider()
         if st.button("로그아웃"):
             del st.session_state.logged_in_id
@@ -166,7 +171,7 @@ def show_main_content(emp_id):
     pending_requests = db.get_pending_requests(emp_id)
     notif_badge = f" 🔴 {len(pending_requests)}" if pending_requests else ""
 
-    tab1, tab2, tab3, tab4 = st.tabs(["🔒 데이터 등록", f"📩 파트너 매칭{notif_badge}", "📊 시너지 분석", "👤 내 성향 분석"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["🔒 데이터 등록", f"📩 파트너 매칭{notif_badge}", "📊 시너지 분석", "🏢 팀 분석", "👤 내 성향 분석"])
 
     with tab1:
         st.markdown('<div class="card">', unsafe_allow_html=True)
@@ -288,16 +293,16 @@ def show_main_content(emp_id):
             if mode == "연인 궁합":
                 st.markdown("---")
                 cg1, cg2 = st.columns(2)
-                additional_info['gender_a'] = cg1.selectbox(f"내({user_info[0]}) 성별", ["선택", "남성", "여성"])
+                additional_info['gender_a'] = cg1.selectbox(f"내({user_name}) 성별", ["선택", "남성", "여성"])
                 additional_info['gender_b'] = cg2.selectbox(f"상대방 성별", ["선택", "남성", "여성"])
                 if "선택" in [additional_info['gender_a'], additional_info['gender_b']]:
                     can_proceed = False
             elif mode == "상사-부하":
                 st.markdown("---")
                 other_name = db.get_user_info(selected_other)[0]
-                superior = st.selectbox("누가 리더(상사)인가요?", [user_info[0], other_name])
+                superior = st.selectbox("누가 리더(상사)인가요?", [user_name, other_name])
                 additional_info['superior_name'] = superior
-                additional_info['subordinate_name'] = other_name if superior == user_info[0] else user_info[0]
+                additional_info['subordinate_name'] = other_name if superior == user_name else user_name
 
             if st.button("시너지 분석 시작", disabled=not can_proceed):
                 info_a = db.get_user_info(emp_id)
@@ -310,6 +315,37 @@ def show_main_content(emp_id):
         st.markdown('</div>', unsafe_allow_html=True)
 
     with tab4:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.subheader(f"🏢 팀 분석 ({user_team})")
+        
+        if not user_team or user_team == "미소속":
+             st.warning("소속된 팀 정보가 없습니다.")
+        else:
+            team_members = db.get_team_members(user_team)
+            # team_members: list of (name, profile_data, emp_id)
+            
+            if len(team_members) < 2:
+                st.info(f"현재 {user_team}에 등록된 멤버가 부족합니다. (최소 2명 이상 필요)")
+            else:
+                member_names = [m[0] for m in team_members]
+                st.write(f"**현재 등록된 멤버 ({len(member_names)}명):** {', '.join(member_names)}")
+                
+                leader_name = st.selectbox("이 팀의 리더(팀장)는 누구인가요?", member_names)
+                
+                if st.button("🚀 팀 전체 시너지 분석"):
+                    with st.spinner("팀 역학 관계 및 시너지 분석 중..."):
+                        # 멤버 데이터를 AI 엔진에 전달 (튜플 리스트 그대로 전달)
+                        # 필요한 것: name, profile_data
+                        # team_members 구조: [(name, data, id), ...]
+                        # ai_engine 함수 호출
+                        data_for_ai = [(m[0], m[1], m[2]) for m in team_members]
+                        report = ai_engine.analyze_team_synergy(data_for_ai, user_team, leader_name)
+                    
+                    st.markdown("---")
+                    st.markdown(report)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with tab5:
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("👤 개인 성향 심층 분석")
         info_self = db.get_user_info(emp_id)
