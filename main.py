@@ -219,6 +219,7 @@ def show_main_content(emp_id):
                 st.warning("코드를 입력해주세요.")
             else:
                 try:
+                    # 1. 전처리: 불필요한 마크다운 코드 블록 태그 및 공백/줄바꿈 제거
                     cleaned_input = raw_input.strip()
                     if cleaned_input.startswith("```"):
                         cleaned_input = re.sub(r'^```[a-zA-Z0-9]*\n|```$', '', cleaned_input, flags=re.MULTILINE).strip()
@@ -226,15 +227,40 @@ def show_main_content(emp_id):
                     # Base64 문자열 내의 모든 공백 및 개행 제거 (더 견고한 처리)
                     cleaned_input = "".join(cleaned_input.split())
                     
+                    # 2. Base64 디코딩 (Padding 보정 포함)
+                    missing_padding = len(cleaned_input) % 4
+                    if missing_padding:
+                        cleaned_input += '=' * (4 - missing_padding)
+                    
                     decoded_bytes = base64.b64decode(cleaned_input)
-                    decoded_str = decoded_bytes.decode('utf-8')
-                    json.loads(decoded_str)
-                    db.save_profile(emp_id, decoded_str, llm_name=selected_llm)
+                    
+                    # 3. 인코딩 감지 및 변환 (utf-8, cp949, euc-kr 등 대응)
+                    try:
+                        decoded_str = decoded_bytes.decode('utf-8')
+                    except UnicodeDecodeError:
+                        try:
+                            decoded_str = decoded_bytes.decode('cp949') # 한글 윈도우 환경 고려
+                        except UnicodeDecodeError:
+                            decoded_str = decoded_bytes.decode('utf-8', errors='replace') # 깨진 글자 무시하고 최대한 복구
+                    
+                    # 4. JSON 검증 및 저장
+                    # LLM이 JSON 형식을 정확히 지키지 못했을 경우를 대비해 JSON 부분만 추출 시도 (유연성 확보)
+                    try:
+                        json_data = json.loads(decoded_str)
+                    except json.JSONDecodeError:
+                        # JSON 시작과 끝 부분을 찾아 재시도
+                        match = re.search(r'\{.*\}', decoded_str, re.DOTALL)
+                        if match:
+                            json_data = json.loads(match.group())
+                        else:
+                            raise ValueError("JSON 형식을 찾을 수 없습니다.")
+
+                    db.save_profile(emp_id, json.dumps(json_data, ensure_ascii=False), llm_name=selected_llm)
                     st.success("데이터가 성공적으로 동기화되었습니다.")
                     st.balloons()
                     st.rerun()
-                except:
-                    st.error("유효하지 않은 코드 형식입니다.")
+                except Exception as e:
+                    st.error(f"유효하지 않은 코드 형식입니다. (상세: {str(e)})")
         st.markdown('</div>', unsafe_allow_html=True)
 
     with tab2:
