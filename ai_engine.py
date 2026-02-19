@@ -13,7 +13,7 @@ def init_genai():
     # DNS 문제를 해결하기 위해 transport='rest' 사용, 일관성을 위해 온도를 낮게 설정
     genai.configure(api_key=api_key, transport='rest')
     model = genai.GenerativeModel(
-        model_name='gemini-2.0-flash',
+        model_name='models/gemini-3-flash-preview',
         generation_config={
             "temperature": 0.1,
             "max_output_tokens": 8192,
