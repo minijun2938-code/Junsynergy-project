@@ -283,35 +283,50 @@ def show_main_content(emp_id):
             st.info("현재 매칭된 파트너가 없습니다.")
         else:
             other_ids = list(set([m[0] if m[1] == emp_id else m[1] for m in accepted]))
-            selected_other = st.selectbox("분석 대상 선택", other_ids)
-            st.write("")
-            mode = st.radio("분석 관점 선택", ["직장 동료", "연인 궁합", "상사-부하"], horizontal=True)
             
-            additional_info = {}
-            can_proceed = True
+            # 파트너 이름 매핑 생성
+            partner_options = {}
+            for oid in other_ids:
+                u_info = db.get_user_info(oid)
+                # u_info가 없을 경우 대비 (삭제된 유저 등)
+                if u_info:
+                    display_label = f"{u_info[0]} ({oid})"
+                    partner_options[display_label] = oid
             
-            if mode == "연인 궁합":
-                st.markdown("---")
-                cg1, cg2 = st.columns(2)
-                additional_info['gender_a'] = cg1.selectbox(f"내({user_name}) 성별", ["선택", "남성", "여성"])
-                additional_info['gender_b'] = cg2.selectbox(f"상대방 성별", ["선택", "남성", "여성"])
-                if "선택" in [additional_info['gender_a'], additional_info['gender_b']]:
-                    can_proceed = False
-            elif mode == "상사-부하":
-                st.markdown("---")
-                other_name = db.get_user_info(selected_other)[0]
-                superior = st.selectbox("누가 리더(상사)인가요?", [user_name, other_name])
-                additional_info['superior_name'] = superior
-                additional_info['subordinate_name'] = other_name if superior == user_name else user_name
+            if not partner_options:
+                st.warning("유효한 파트너 정보를 불러올 수 없습니다.")
+            else:
+                selected_label = st.selectbox("분석 대상 선택", list(partner_options.keys()))
+                selected_other = partner_options[selected_label]
+                
+                st.write("")
+                mode = st.radio("분석 관점 선택", ["직장 동료", "연인 궁합", "상사-부하"], horizontal=True)
+                
+                additional_info = {}
+                can_proceed = True
+                
+                if mode == "연인 궁합":
+                    st.markdown("---")
+                    cg1, cg2 = st.columns(2)
+                    additional_info['gender_a'] = cg1.selectbox(f"내({user_name}) 성별", ["선택", "남성", "여성"])
+                    additional_info['gender_b'] = cg2.selectbox(f"상대방 성별", ["선택", "남성", "여성"])
+                    if "선택" in [additional_info['gender_a'], additional_info['gender_b']]:
+                        can_proceed = False
+                elif mode == "상사-부하":
+                    st.markdown("---")
+                    other_name = db.get_user_info(selected_other)[0]
+                    superior = st.selectbox("누가 리더(상사)인가요?", [user_name, other_name])
+                    additional_info['superior_name'] = superior
+                    additional_info['subordinate_name'] = other_name if superior == user_name else user_name
 
-            if st.button("시너지 분석 시작", disabled=not can_proceed):
-                info_a = db.get_user_info(emp_id)
-                info_b = db.get_user_info(selected_other)
-                mode_map = {"직장 동료": "colleague", "연인 궁합": "couple", "상사-부하": "hierarchy"}
-                with st.spinner("🔍 분석 중..."):
-                    report = ai_engine.analyze_compatibility(info_a[1], info_b[1], info_a[0], info_b[0], mode=mode_map[mode], additional_info=additional_info)
-                st.markdown("---")
-                st.markdown(report)
+                if st.button("시너지 분석 시작", disabled=not can_proceed):
+                    info_a = db.get_user_info(emp_id)
+                    info_b = db.get_user_info(selected_other)
+                    mode_map = {"직장 동료": "colleague", "연인 궁합": "couple", "상사-부하": "hierarchy"}
+                    with st.spinner("🔍 분석 중..."):
+                        report = ai_engine.analyze_compatibility(info_a[1], info_b[1], info_a[0], info_b[0], mode=mode_map[mode], additional_info=additional_info)
+                    st.markdown("---")
+                    st.markdown(report)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with tab4:
