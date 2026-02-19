@@ -117,10 +117,18 @@ def set_page_style():
             transform: none;
         }
 
-        /* 히스토리 모달 내부 스타일 */
-        .history-item {
-            padding: 1rem;
-            border-bottom: 1px solid rgba(128,128,128,0.2);
+        /* 사이드바 히스토리 스타일 */
+        .sidebar-history-item {
+            font-size: 0.85rem;
+            padding: 0.5rem;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.05);
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            border: 1px solid rgba(128,128,128,0.1);
+        }
+        .sidebar-history-item:hover {
+            background: rgba(255,255,255,0.1);
         }
         </style>
     """, unsafe_allow_html=True)
@@ -177,17 +185,11 @@ def signup_dialog():
                 st.success("가입 성공! 로그인을 진행해주세요.")
                 st.rerun()
 
-@st.dialog("📊 분석 히스토리")
-def show_history_dialog(emp_id):
-    history = db.get_analysis_history(emp_id)
-    if not history:
-        st.info("아직 분석 내역이 없습니다.")
-        return
-    
-    for h_target_id, h_target_name, h_mode, h_report, h_date in history:
-        with st.expander(f"📅 {h_date} | {h_mode} ({h_target_name if h_target_name else '본인'})"):
-            st.markdown(h_report)
-            st.divider()
+@st.dialog("📋 분석 결과 상세")
+def show_report_dialog(title, content):
+    st.markdown(f"### {title}")
+    st.markdown("---")
+    st.markdown(content)
 
 def show_main_content(emp_id):
     user_info = db.get_user_info(emp_id)
@@ -199,10 +201,28 @@ def show_main_content(emp_id):
         st.markdown(f"### 👤 {user_name}님")
         st.caption(f"사번: {emp_id}")
         st.caption(f"소속: {user_team}")
-        st.divider()
         if st.button("로그아웃"):
             del st.session_state.logged_in_id
             st.rerun()
+        
+        st.divider()
+        st.subheader("📜 분석 히스토리")
+        history = db.get_analysis_history(emp_id)
+        if not history:
+            st.caption("아직 분석 내역이 없습니다.")
+        else:
+            for h_target_id, h_target_name, h_mode, h_report, h_date in history:
+                display_name = h_target_name if h_target_name else "본인"
+                # 모드명 한글 변환
+                mode_kr = {
+                    "colleague": "직장동료", "couple": "연인궁합", "hierarchy": "상사부하",
+                    "self_mbti": "MBTI", "self_archetype": "에겐테토", "self_swot": "장단점",
+                    "Team Analysis": "팀 분석"
+                }.get(h_mode, h_mode)
+                
+                title = f"{display_name} | {mode_kr}"
+                if st.button(f"{title}\n({h_date})", key=f"hist_{h_date}_{h_target_id}", help=h_date):
+                    show_report_dialog(title, h_report)
 
     # 알림 데이터 가져오기
     pending_requests = db.get_pending_requests(emp_id)
@@ -212,13 +232,7 @@ def show_main_content(emp_id):
 
     with tab1:
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        
-        col_title, col_hist = st.columns([3, 1])
-        with col_title:
-            st.subheader("📋 내 성향 데이터 업데이트")
-        with col_hist:
-            if st.button("📜 히스토리", key="view_history"):
-                show_history_dialog(emp_id)
+        st.subheader("📋 내 성향 데이터 업데이트")
 
         if user_info and user_info[2]:
             st.caption(f"⏱ 마지막 동기화: {user_info[2]} ({user_info[3]})")
@@ -265,35 +279,25 @@ def show_main_content(emp_id):
                     st.warning("코드를 입력해주세요.")
                 else:
                     try:
-                        # 1. 전처리: 불필요한 마크다운 코드 블록 태그 및 공백/줄바꿈 제거
                         cleaned_input = raw_input.strip()
                         if cleaned_input.startswith("```"):
-                            cleaned_input = re.sub(r'^```[a-zA-Z0-9]*\n|```$', '', cleaned_input, flags=re.MULTILINE).strip()
-                        
-                        # Base64 문자열 내의 모든 공백 및 개행 제거 (더 견고한 처리)
+                            cleaned_input = re.sub(r'^```[a-zA-Z0-9]*\\n|```$', '', cleaned_input, flags=re.MULTILINE).strip()
                         cleaned_input = "".join(cleaned_input.split())
-                        
-                        # 2. Base64 디코딩 (Padding 보정 포함)
                         missing_padding = len(cleaned_input) % 4
                         if missing_padding:
                             cleaned_input += '=' * (4 - missing_padding)
-                        
                         decoded_bytes = base64.b64decode(cleaned_input)
-                        
-                        # 3. 인코딩 감지 및 변환 (utf-8, cp949, euc-kr 등 대응)
                         try:
                             decoded_str = decoded_bytes.decode('utf-8')
                         except UnicodeDecodeError:
                             try:
-                                decoded_str = decoded_bytes.decode('cp949') # 한글 윈도우 환경 고려
+                                decoded_str = decoded_bytes.decode('cp949')
                             except UnicodeDecodeError:
-                                decoded_str = decoded_bytes.decode('utf-8', errors='replace') # 깨진 글자 무시하고 최대한 복구
-                        
-                        # 4. JSON 검증 및 저장
+                                decoded_str = decoded_bytes.decode('utf-8', errors='replace')
                         try:
                             json_data = json.loads(decoded_str)
                         except json.JSONDecodeError:
-                            match = re.search(r'\{.*\}', decoded_str, re.DOTALL)
+                            match = re.search(r'\\{.*\\}', decoded_str, re.DOTALL)
                             if match:
                                 json_data = json.loads(match.group())
                             else:
@@ -314,7 +318,6 @@ def show_main_content(emp_id):
     with tab2:
         st.markdown('<div class="card">', unsafe_allow_html=True)
         
-        # 1. 받은 요청
         if pending_requests:
             st.subheader(f"🔔 받은 매칭 요청 ({len(pending_requests)})")
             for req in pending_requests:
@@ -325,7 +328,6 @@ def show_main_content(emp_id):
                     st.rerun()
             st.divider()
 
-        # 2. 보낸 요청 (철회 기능)
         sent_requests = db.get_sent_requests(emp_id)
         if sent_requests:
             st.subheader(f"📨 보낸 매칭 요청 ({len(sent_requests)})")
@@ -338,7 +340,6 @@ def show_main_content(emp_id):
                     st.rerun()
             st.divider()
 
-        # 3. 새로운 요청 보내기
         st.subheader("➕ 새로운 파트너 매칭")
         target_id = st.text_input("상대방 사번", placeholder="slXXXXX")
         if st.button("매칭 요청 발송"):
@@ -361,8 +362,6 @@ def show_main_content(emp_id):
             st.info("현재 매칭된 파트너가 없습니다.")
         else:
             other_ids = list(set([m[0] if m[1] == emp_id else m[1] for m in accepted]))
-            
-            # 파트너 이름 매핑 생성
             partner_options = {}
             for oid in other_ids:
                 u_info = db.get_user_info(oid)
@@ -382,7 +381,6 @@ def show_main_content(emp_id):
                         st.rerun()
                 
                 selected_other = partner_options[selected_label]
-                
                 st.write("")
                 mode = st.radio("분석 관점 선택", ["직장 동료", "연인 궁합", "상사-부하"], horizontal=True)
                 
@@ -409,8 +407,7 @@ def show_main_content(emp_id):
                     mode_map = {"직장 동료": "colleague", "연인 궁합": "couple", "상사-부하": "hierarchy"}
                     with st.spinner("🔍 분석 중..."):
                         report = ai_engine.analyze_compatibility(info_a[1], info_b[1], info_a[0], info_b[0], mode=mode_map[mode], additional_info=additional_info)
-                        # 히스토리 저장
-                        db.save_analysis_report(emp_id, selected_other, mode, report)
+                        db.save_analysis_report(emp_id, selected_other, mode_map[mode], report)
                     st.markdown("---")
                     st.markdown(report)
         st.markdown('</div>', unsafe_allow_html=True)
@@ -423,23 +420,18 @@ def show_main_content(emp_id):
              st.warning("소속된 팀 정보가 없습니다.")
         else:
             team_members = db.get_team_members(user_team)
-            # team_members: list of (name, profile_data, emp_id)
-            
             if len(team_members) < 2:
                 st.info(f"현재 {user_team}에 등록된 멤버가 부족합니다. (최소 2명 이상 필요)")
             else:
                 member_names = [m[0] for m in team_members]
                 st.write(f"**현재 등록된 멤버 ({len(member_names)}명):** {', '.join(member_names)}")
-                
                 leader_name = st.selectbox("이 팀의 리더(팀장)는 누구인가요?", member_names)
                 
                 if st.button("🚀 팀 전체 시너지 분석"):
                     with st.spinner("팀 역학 관계 및 시너지 분석 중..."):
                         data_for_ai = [(m[0], m[1], m[2]) for m in team_members]
                         report = ai_engine.analyze_team_synergy(data_for_ai, user_team, leader_name)
-                        # 팀 히스토리는 target_id를 팀명으로 저장하거나 NULL로 처리 가능 (여기선 팀명으로)
                         db.save_analysis_report(emp_id, user_team, "Team Analysis", report)
-                    
                     st.markdown("---")
                     st.markdown(report)
         st.markdown('</div>', unsafe_allow_html=True)
@@ -453,16 +445,15 @@ def show_main_content(emp_id):
         else:
             gender = st.radio("성별 (분석용)", ["남성", "여성"], horizontal=True)
             st.write("")
-            btn_cols = st.columns(3)
+            btn_cols = st.columns([1, 1, 1])
             report_type = None
             if btn_cols[0].button("🧩 MBTI 분석", use_container_width=True): report_type = "self_mbti"
-            if btn_cols[1].button("🎭 에겐테토분석", use_container_width=True): report_type = "self_archetype"
+            if btn_cols[1].button("🎭 에겐테토 분석", use_container_width=True): report_type = "self_archetype"
             if btn_cols[2].button("🌟 장단점 분석", use_container_width=True): report_type = "self_swot"
             
             if report_type:
                 with st.spinner("🔍 분석 중..."):
                     report = ai_engine.analyze_compatibility(info_self[1], None, info_self[0], None, mode=report_type, additional_info={"gender": gender})
-                    # 본인 분석 히스토리 저장 (target_id = NULL)
                     db.save_analysis_report(emp_id, None, report_type, report)
                 st.markdown("---")
                 st.markdown(report)

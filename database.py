@@ -1,8 +1,15 @@
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+
+import pytz
 
 def get_connection():
     return sqlite3.connect('poc_chemistry.db')
+
+def get_kst_now():
+    """현재 시간을 한국 표준시(KST)로 반환합니다."""
+    tz_kst = pytz.timezone('Asia/Seoul')
+    return datetime.now(tz_kst).strftime('%Y-%m-%d %H:%M:%S')
 
 def init_db():
     with get_connection() as conn:
@@ -42,7 +49,7 @@ def init_db():
 
 def save_profile(emp_id, profile_json, llm_name=None):
     """프로필 데이터를 저장합니다. 이미 존재한다면 업데이트합니다."""
-    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    now = get_kst_now()
     with get_connection() as conn:
         c = conn.cursor()
         c.execute("""UPDATE user_profiles 
@@ -109,7 +116,7 @@ def get_team_members(team_name):
 
 def save_analysis_report(emp_id, target_id, mode, report):
     """분석된 리포트를 저장합니다."""
-    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    now = get_kst_now()
     with get_connection() as conn:
         c = conn.cursor()
         c.execute("INSERT INTO analysis_history (emp_id, target_id, mode, report, created_at) VALUES (?, ?, ?, ?, ?)",
