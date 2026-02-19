@@ -222,6 +222,10 @@ def show_main_content(emp_id):
                     cleaned_input = raw_input.strip()
                     if cleaned_input.startswith("```"):
                         cleaned_input = re.sub(r'^```[a-zA-Z0-9]*\n|```$', '', cleaned_input, flags=re.MULTILINE).strip()
+                    
+                    # Base64 문자열 내의 모든 공백 및 개행 제거 (더 견고한 처리)
+                    cleaned_input = "".join(cleaned_input.split())
+                    
                     decoded_bytes = base64.b64decode(cleaned_input)
                     decoded_str = decoded_bytes.decode('utf-8')
                     json.loads(decoded_str)
