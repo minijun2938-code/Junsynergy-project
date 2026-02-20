@@ -9,6 +9,12 @@ import re
 from datetime import datetime
 
 # --- UI 세션 상태 초기화 ---
+if 'logged_in_id' not in st.session_state:
+    # 쿼리 파라미터에서 사용자 ID 확인 (새로고침 시 유지용)
+    query_params = st.query_params
+    if "user" in query_params:
+        st.session_state.logged_in_id = query_params["user"]
+
 if 'view' not in st.session_state:
     st.session_state.view = 'login'
 if 'sync_success' not in st.session_state:
@@ -138,6 +144,9 @@ def validate_emp_id(emp_id):
     return re.match(pattern, emp_id) is not None
 
 def show_login_page():
+    # 저장된 아이디 불러오기
+    saved_id = st.query_params.get("remembered_user", "")
+    
     st.markdown('<div style="height: 100px;"></div>', unsafe_allow_html=True)
     st.markdown('<div class="header-title">엔무버 궁합 프로그램</div>', unsafe_allow_html=True)
     st.markdown('<div class="header-sub">Professional Synergy Analysis Tool for Enmovers</div>', unsafe_allow_html=True)
@@ -145,12 +154,24 @@ def show_login_page():
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        user_id = st.text_input("사번 (sl+5자리)", placeholder="sl12345")
+        user_id = st.text_input("사번 (sl+5자리)", value=saved_id, placeholder="sl12345")
         user_pw = st.text_input("비밀번호", type="password", placeholder="••••••••")
+        
+        # 아이디 저장 체크박스
+        remember_me = st.checkbox("아이디 저장", value=bool(saved_id))
         
         if st.button("로그인", use_container_width=True):
             if auth.check_login(user_id, user_pw):
                 st.session_state.logged_in_id = user_id
+                # URL 쿼리 파라미터에 사용자 ID 저장 (새로고침 시 유지)
+                st.query_params["user"] = user_id
+                
+                # 아이디 저장 여부 업데이트
+                if remember_me:
+                    st.query_params["remembered_user"] = user_id
+                else:
+                    if "remembered_user" in st.query_params:
+                        del st.query_params["remembered_user"]
                 st.rerun()
             else:
                 st.error("사번 또는 비밀번호를 확인해주세요.")
@@ -202,6 +223,8 @@ def show_main_content(emp_id):
         st.caption(f"사번: {emp_id}")
         st.caption(f"소속: {user_team}")
         if st.button("로그아웃"):
+            if "user" in st.query_params:
+                del st.query_params["user"]
             del st.session_state.logged_in_id
             st.rerun()
         
@@ -280,9 +303,9 @@ def show_main_content(emp_id):
                 else:
                     try:
                         cleaned_input = raw_input.strip()
-                        if cleaned_input.startswith("```"):
-                            cleaned_input = re.sub(r'^```[a-zA-Z0-9]*\\n|```$', '', cleaned_input, flags=re.MULTILINE).strip()
-                        cleaned_input = "".join(cleaned_input.split())
+                        # Base64에 허용되지 않는 모든 문자(한글, 특수문자, 마크다운 기호 등)를 정규식으로 강력하게 제거
+                        cleaned_input = re.sub(r'[^A-Za-z0-9+/=]', '', cleaned_input)
+                        
                         missing_padding = len(cleaned_input) % 4
                         if missing_padding:
                             cleaned_input += '=' * (4 - missing_padding)

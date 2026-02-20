@@ -9,7 +9,14 @@ Please understand that this is not a professional diagnosis, but rather a 'data 
 3. **Relationship Scenarios**: Describe my virtual persona characteristics as a romantic partner, coworker, leader, and follower, inferring from our conversation tone.
 4. **Growth Points**: Summarize the potential of my strengths and points to consider for better communication.
 
-(To ensure the system can recognize the data immediately, please include the **final code block encoded in Base64**. The result code itself must contain only the encoded string for data integrity. All descriptive text inside the JSON must be written in Korean.)"""
+(To ensure the system can recognize the data immediately, please follow these strict output rules:
+1. ONLY Output Base64: Do not include any natural language descriptions, greetings, or explanations.
+2. No Code Blocks: Do not wrap the code in markdown blocks like ```. Output the raw string only.
+3. Character Set Restriction: Use only valid Base64 characters (A-Z, a-z, 0-9, +, /, =).
+4. FORBIDDEN: Absolutely NO Korean (한글), Chinese characters (한자), special symbols, or whitespace within the code string.
+5. No Line Breaks: Ensure the output is a single, continuous string.
+
+The final result must be a pure Base64 string. All descriptive text inside the original JSON (before encoding) must be written in Korean.)"""
 
 # --- 동료 궁합 (Colleague) ---
 COLLEAGUE_PROMPT = """
