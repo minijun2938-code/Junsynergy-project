@@ -124,14 +124,17 @@ def set_page_style():
             border-radius: 12px;
             padding: 12px 24px;
             transition: all 0.3s;
-            color: rgba(255, 255, 255, 0.5) !important;
-            border: none !important;
+            color: rgba(255, 255, 255, 0.7) !important; /* 선택되지 않은 탭 글자색 강화 */
+            background-color: rgba(255, 255, 255, 0.05) !important; /* 선택되지 않은 탭도 배경을 살려줌 */
+            border: 1px solid rgba(255, 255, 255, 0.05) !important;
+            margin-right: 4px;
         }
 
         .stTabs [aria-selected="true"] {
             background: linear-gradient(135deg, #6366F1 0%, #A855F7 100%) !important;
             color: #fff !important;
             box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+            opacity: 1.0 !important;
         }
 
         /* 스트림릿 기본 빨간색 선 및 하이라이트 완전히 제거 */
