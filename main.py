@@ -37,108 +37,130 @@ def set_page_style():
             font-family: 'Inter', 'Noto Sans KR', sans-serif;
         }
 
-        /* 메인 배경 효과 */
+        /* 메인 배경 효과 - 몽환적인 오로라 스타일 */
         .stApp {
-            background: radial-gradient(circle at 50% -20%, rgba(225, 0, 42, 0.05), transparent);
+            background: 
+                radial-gradient(circle at 10% 10%, rgba(123, 97, 255, 0.08), transparent 40%),
+                radial-gradient(circle at 90% 90%, rgba(0, 209, 255, 0.08), transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(255, 0, 128, 0.03), transparent 60%);
+            background-attachment: fixed;
         }
 
         /* 버튼 및 인터랙션 요소 */
         .stButton > button {
             width: 100%;
-            border-radius: 12px;
-            height: 3.2rem;
+            border-radius: 16px;
+            height: 3.5rem;
             font-weight: 600;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid rgba(128, 128, 128, 0.1);
-            background-color: rgba(255, 255, 255, 0.05);
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: inherit;
         }
 
-        /* 강조 버튼 (SK Red) */
+        /* 강조 버튼 - 트렌디한 인디고-퍼플 그라데이션 */
         div.stButton > button:first-child {
-            background: linear-gradient(135deg, #E1002A 0%, #FF2E5B 100%) !important;
+            background: linear-gradient(135deg, #6366F1 0%, #A855F7 100%) !important;
             color: #FFFFFF !important;
             border: none !important;
-            box-shadow: 0 4px 15px rgba(225, 0, 42, 0.2);
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
         }
         
         div.stButton > button:hover {
-            box-shadow: 0 8px 25px rgba(225, 0, 42, 0.4);
-            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(99, 102, 241, 0.5);
+            transform: translateY(-3px) scale(1.02);
         }
 
-        /* 카드형 섹션 */
+        /* 카드형 섹션 - 더 투명하고 깊이감 있게 */
         .card {
             padding: 2.5rem;
-            border-radius: 24px;
+            border-radius: 28px;
             margin-bottom: 2rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
         }
 
-        /* 타이틀 디자인 */
+        /* 타이틀 디자인 - 네온 감성의 세련된 텍스트 */
         .header-title {
-            font-size: 2.8rem;
+            font-size: 3.2rem;
             font-weight: 900;
-            letter-spacing: -2px;
+            letter-spacing: -2.5px;
             text-align: center;
             margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, #E1002A 0%, #FF8A00 100%);
+            background: linear-gradient(135deg, #fff 30%, #a855f7 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+            filter: drop-shadow(0 0 15px rgba(168, 85, 247, 0.3));
         }
         
         .header-sub {
-            font-size: 1.1rem;
-            color: #888;
+            font-size: 1rem;
+            color: #a1a1aa;
             text-align: center;
             margin-bottom: 3.5rem;
-            font-weight: 300;
-            letter-spacing: 2px;
+            font-weight: 400;
+            letter-spacing: 4px;
             text-transform: uppercase;
+            opacity: 0.8;
         }
 
-        /* 탭 커스텀 */
+        /* 탭 커스텀 - 애플 스타일 슬라이더 느낌 */
         .stTabs [data-baseweb="tab-list"] {
-            gap: 12px;
-            padding: 8px;
-            background-color: rgba(128, 128, 128, 0.05);
-            border-radius: 16px;
+            gap: 10px;
+            padding: 6px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .stTabs [data-baseweb="tab"] {
-            border-radius: 10px;
-            padding: 8px 16px;
-            transition: all 0.2s;
+            border-radius: 14px;
+            padding: 10px 20px;
+            transition: all 0.3s;
+            color: #71717a;
         }
 
         .stTabs [aria-selected="true"] {
-            background-color: rgba(225, 0, 42, 0.1) !important;
-            color: #E1002A !important;
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            color: #fff !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
         
-        /* 결과 리포트 박스 스타일 */
+        /* 결과 리포트 박스 - 네온 보더 효과 */
         .report-box {
             background: rgba(255, 255, 255, 0.02);
-            border-left: 4px solid #E1002A;
-            padding: 1.5rem;
-            border-radius: 0 16px 16px 0;
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            padding: 2rem;
+            border-radius: 24px;
             margin-top: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .report-box::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, #6366F1, #A855F7);
         }
 
-        /* 입력창 포커스 효과 */
+        /* 입력창 디자인 - 다크 모던 */
         .stTextInput input, .stTextArea textarea {
-            border-radius: 12px !important;
-            border: 1px solid rgba(128, 128, 128, 0.2) !important;
-            background-color: rgba(0, 0, 0, 0.1) !important;
-            transition: all 0.3s;
+            border-radius: 16px !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            background-color: rgba(0, 0, 0, 0.3) !important;
+            color: #fff !important;
+            padding: 1rem !important;
         }
 
         .stTextInput input:focus, .stTextArea textarea:focus {
-            border-color: #E1002A !important;
-            box-shadow: 0 0 0 2px rgba(225, 0, 42, 0.2) !important;
+            border-color: #A855F7 !important;
+            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.2) !important;
         }
         </style>
     """, unsafe_allow_html=True)
