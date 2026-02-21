@@ -592,28 +592,29 @@ def show_main_content(emp_id):
                         active_members.append(member)
                     
                     with cols[idx % 5]:
-                        # 제외 상태에 따른 이모지 및 스타일 결정
-                        label = f"{m_name}" if not is_excluded else f"<s>{m_name}</s>"
+                        # 제외 상태에 따른 버튼 스타일 결정
+                        if is_excluded:
+                            # 제외된 경우: 스타일이 직접 적용된 마크다운 버튼 사용
+                            st.markdown(f"""
+                                <style>
+                                div.stButton > button[key="m_tag_{m_id}"] {{
+                                    background-color: rgba(0, 0, 0, 0.4) !important;
+                                    color: rgba(255, 255, 255, 0.2) !important;
+                                    opacity: 0.3 !important;
+                                    border: 1px dashed rgba(255, 255, 255, 0.1) !important;
+                                    box-shadow: none !important;
+                                    transform: none !important;
+                                    filter: grayscale(100%) !important;
+                                }}
+                                </style>
+                            """, unsafe_allow_html=True)
                         
-                        # 버튼 생성
                         if st.button(m_name, key=f"m_tag_{m_id}", use_container_width=True):
                             if is_excluded:
                                 st.session_state.excluded_members.remove(m_id)
                             else:
                                 st.session_state.excluded_members.add(m_id)
                             st.rerun()
-                        
-                        # CSS를 통한 시각적 효과 부여 (버튼 속성 직접 제어)
-                        if is_excluded:
-                            st.markdown(f"""
-                                <style>
-                                button[key="m_tag_{m_id}"] {{
-                                    opacity: 0.25 !important;
-                                    filter: grayscale(100%) brightness(0.7) !important;
-                                    border: 1px dashed rgba(255,255,255,0.2) !important;
-                                }}
-                                </style>
-                            """, unsafe_allow_html=True)
                 
                 st.divider()
 
