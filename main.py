@@ -209,22 +209,41 @@ def set_page_style():
 
         /* 분석 리스트 박스 - 모바일 컴팩트 최적화 */
         .member-list-box {
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
-            padding: 5px;
-            height: 180px;
+            padding: 4px;
+            height: 140px; /* 더 낮게 조정 */
             overflow-y: auto;
         }
-        .stButton > button.compact-btn {
-            height: 2.2rem !important;
+        
+        /* 버튼 텍스트 크기 축소 */
+        .stButton > button {
             font-size: 0.85rem !important;
-            margin-bottom: 4px !important;
-            border-radius: 8px !important;
+            height: 2.8rem !important;
         }
-        .arrow-btn > button {
-            height: 2.5rem !important;
+
+        .compact-member-btn > div > button {
+            height: 2.2rem !important;
+            font-size: 0.8rem !important;
+            margin-bottom: 2px !important;
+            padding: 0 10px !important;
+        }
+        
+        .arrow-btn-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            height: 140px;
+        }
+
+        .arrow-btn-container button {
+            width: 35px !important;
+            height: 35px !important;
             padding: 0 !important;
+            font-size: 14px !important;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -563,28 +582,30 @@ def show_main_content(emp_id):
                 active_members = [m for m in team_members if m[2] not in st.session_state.excluded_members]
                 excluded_members_list = [m for m in team_members if m[2] in st.session_state.excluded_members]
                 
-                col_active, col_arrow, col_excluded = st.columns([1, 0.3, 1])
+                # 모바일에서 한 화면에 들어오도록 비율 조정 (1:0.3:1)
+                col_active, col_arrow, col_excluded = st.columns([1, 0.4, 1])
                 
                 with col_active:
-                    st.markdown('<p style="text-align:center; font-size:0.8rem; color:#A855F7; margin-bottom:5px;">✅ 참여 중</p>', unsafe_allow_html=True)
+                    st.markdown('<p style="text-align:center; font-size:0.75rem; color:#A855F7; margin-bottom:5px; font-weight:bold;">✅ 참여</p>', unsafe_allow_html=True)
                     st.markdown('<div class="member-list-box">', unsafe_allow_html=True)
                     for m_name, m_data, m_id in active_members:
                         is_selected = st.session_state.selected_member_to_move == m_id
-                        if st.button(f"{m_name}", key=f"btn_active_{m_id}", use_container_width=True, 
-                                     type="secondary" if not is_selected else "primary", help="클릭하여 선택"):
+                        st.markdown('<div class="compact-member-btn">', unsafe_allow_html=True)
+                        if st.button(f"{m_name}", key=f"active_{m_id}", use_container_width=True, 
+                                     type="secondary" if not is_selected else "primary"):
                             st.session_state.selected_member_to_move = m_id
                             st.rerun()
+                        st.markdown('</div>', unsafe_allow_html=True)
                     st.markdown('</div>', unsafe_allow_html=True)
 
                 with col_arrow:
-                    st.markdown('<div style="height: 55px;"></div>', unsafe_allow_html=True)
-                    st.markdown('<div class="arrow-btn">', unsafe_allow_html=True)
-                    if st.button("➡", key="move_right", help="제외하기"):
+                    st.markdown('<div class="arrow-btn-container">', unsafe_allow_html=True)
+                    if st.button("➡", key="move_right_final"):
                         if st.session_state.selected_member_to_move:
                             st.session_state.excluded_members.add(st.session_state.selected_member_to_move)
                             st.session_state.selected_member_to_move = None
                             st.rerun()
-                    if st.button("⬅", key="move_left", help="포함하기"):
+                    if st.button("⬅", key="move_left_final"):
                         if st.session_state.selected_member_to_move and st.session_state.selected_member_to_move in st.session_state.excluded_members:
                             st.session_state.excluded_members.remove(st.session_state.selected_member_to_move)
                             st.session_state.selected_member_to_move = None
@@ -592,14 +613,16 @@ def show_main_content(emp_id):
                     st.markdown('</div>', unsafe_allow_html=True)
 
                 with col_excluded:
-                    st.markdown('<p style="text-align:center; font-size:0.8rem; color:#888; margin-bottom:5px;">❌ 제외됨</p>', unsafe_allow_html=True)
+                    st.markdown('<p style="text-align:center; font-size:0.75rem; color:#888; margin-bottom:5px; font-weight:bold;">❌ 제외</p>', unsafe_allow_html=True)
                     st.markdown('<div class="member-list-box">', unsafe_allow_html=True)
                     for m_name, m_data, m_id in excluded_members_list:
                         is_selected = st.session_state.selected_member_to_move == m_id
-                        if st.button(f"{m_name}", key=f"btn_excl_{m_id}", use_container_width=True, 
-                                     type="secondary" if not is_selected else "primary", help="클릭하여 선택"):
+                        st.markdown('<div class="compact-member-btn">', unsafe_allow_html=True)
+                        if st.button(f"{m_name}", key=f"excl_{m_id}", use_container_width=True, 
+                                     type="secondary" if not is_selected else "primary"):
                             st.session_state.selected_member_to_move = m_id
                             st.rerun()
+                        st.markdown('</div>', unsafe_allow_html=True)
                     st.markdown('</div>', unsafe_allow_html=True)
 
                 st.divider()
