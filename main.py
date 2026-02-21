@@ -17,8 +17,8 @@ if 'logged_in_id' not in st.session_state:
 
 if 'view' not in st.session_state:
     st.session_state.view = 'login'
-if 'sync_success' not in st.session_state:
-    st.session_state.sync_success = False
+if 'excluded_members' not in st.session_state:
+    st.session_state.excluded_members = set()
 
 def set_page_style():
     """다크모드 완벽 대응 및 SaaS 스타일 UI"""
@@ -200,6 +200,34 @@ def set_page_style():
             background-color: rgba(99, 102, 241, 0.1) !important;
             color: #A855F7 !important;
             border: 1px solid rgba(168, 85, 247, 0.2) !important;
+        }
+
+        /* 팀 멤버 태그 스타일 */
+        .member-tag {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 10px 16px;
+            margin: 8px;
+            position: relative;
+            transition: all 0.3s;
+        }
+        .member-tag:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-2px);
+        }
+        .member-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #fff;
+            margin-right: 4px;
+        }
+        .remove-btn-wrapper {
+            position: absolute;
+            top: -10px;
+            left: -10px;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -527,20 +555,52 @@ def show_main_content(emp_id):
             if len(team_members) < 2:
                 st.info(f"현재 {user_team}에 등록된 멤버가 부족합니다. (최소 2명 이상 필요)")
             else:
-                member_names = [m[0] for m in team_members]
-                st.write(f"**현재 등록된 멤버 ({len(member_names)}명):** {', '.join(member_names)}")
-                leader_name = st.selectbox("이 팀의 리더(팀장)는 누구인가요?", member_names)
+                # 필터링 로직: st.session_state.excluded_members에 없는 멤버만 추출
+                active_members = [m for m in team_members if m[2] not in st.session_state.excluded_members]
                 
-                if st.button("🚀 팀 전체 시너지 분석"):
-                    with st.spinner("팀 역학 관계 및 시너지 분석 중..."):
-                        data_for_ai = [(m[0], m[1], m[2]) for m in team_members]
-                        report = ai_engine.analyze_team_synergy(data_for_ai, user_team, leader_name)
-                        db.save_analysis_report(emp_id, user_team, "Team Analysis", report)
-                    st.markdown("---")
-                    with st.container():
-                        st.markdown(f'<div class="report-box">', unsafe_allow_html=True)
-                        st.markdown(report)
-                        st.markdown('</div>', unsafe_allow_html=True)
+                st.markdown("**참여 멤버 관리**")
+                st.caption("💡 상단 [ⓧ] 버튼을 눌러 분석에서 임시로 제외할 수 있습니다. (새로고침 시 복구)")
+                
+                # 멤버 리스트 가로 나열
+                cols = st.columns(len(team_members) if len(team_members) > 0 else 1)
+                for idx, member in enumerate(team_members):
+                    m_name, m_data, m_id = member
+                    is_excluded = m_id in st.session_state.excluded_members
+                    
+                    with cols[idx % len(cols)]:
+                        st.markdown(f"""
+                            <div class="member-tag" style="opacity: {0.4 if is_excluded else 1.0};">
+                                <span class="member-name">{m_name}</span>
+                            </div>
+                        """, unsafe_allow_html=True)
+                        
+                        # 왼쪽 상단에 배치될 제외 버튼
+                        btn_label = "ⓧ" if not is_excluded else "➕"
+                        if st.button(btn_label, key=f"excl_{m_id}", help="제외/포함"):
+                            if is_excluded:
+                                st.session_state.excluded_members.remove(m_id)
+                            else:
+                                st.session_state.excluded_members.add(m_id)
+                            st.rerun()
+
+                st.divider()
+
+                if len(active_members) < 2:
+                    st.warning("분석을 위해 최소 2명 이상의 멤버를 포함해 주세요.")
+                else:
+                    member_names = [m[0] for m in active_members]
+                    leader_name = st.selectbox("이 팀의 리더(팀장)는 누구인가요?", member_names)
+                    
+                    if st.button("🚀 팀 전체 시너지 분석"):
+                        with st.spinner("팀 역학 관계 및 시너지 분석 중..."):
+                            data_for_ai = [(m[0], m[1], m[2]) for m in active_members]
+                            report = ai_engine.analyze_team_synergy(data_for_ai, user_team, leader_name)
+                            db.save_analysis_report(emp_id, user_team, "Team Analysis", report)
+                        st.markdown("---")
+                        with st.container():
+                            st.markdown(f'<div class="report-box">', unsafe_allow_html=True)
+                            st.markdown(report)
+                            st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with tab5:
