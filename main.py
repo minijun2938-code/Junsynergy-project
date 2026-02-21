@@ -579,41 +579,43 @@ def show_main_content(emp_id):
                 st.markdown("**참여 멤버 관리**")
                 st.caption("💡 분석에서 제외하고 싶은 사람은 이름을 클릭해 주세요. (옅게 표시됨)")
                 
-                # 멤버 리스트 가로 나열 - Columns 활용하여 줄바꿈 자동화
-                active_members_to_show = []
+                # 멤버 분류 및 필터링
+                active_members = []
                 
-                # 5열 레이아웃 (모바일에서는 자동으로 줄바꿈됨)
+                # 버튼 레이아웃 (반응형)
                 cols = st.columns(5)
-                
                 for idx, member in enumerate(team_members):
                     m_name, m_data, m_id = member
                     is_excluded = m_id in st.session_state.excluded_members
                     
+                    if not is_excluded:
+                        active_members.append(member)
+                    
                     with cols[idx % 5]:
-                        # 버튼 스타일을 상태에 따라 다르게 적용
-                        btn_type = "secondary" if is_excluded else "primary"
-                        if st.button(f"{m_name}", key=f"m_tag_{m_id}", use_container_width=True):
+                        # 제외 상태에 따른 이모지 및 스타일 결정
+                        label = f"{m_name}" if not is_excluded else f"<s>{m_name}</s>"
+                        
+                        # 버튼 생성
+                        if st.button(m_name, key=f"m_tag_{m_id}", use_container_width=True):
                             if is_excluded:
                                 st.session_state.excluded_members.remove(m_id)
                             else:
                                 st.session_state.excluded_members.add(m_id)
                             st.rerun()
                         
-                        # 제외된 경우 스타일 주입
+                        # CSS를 통한 시각적 효과 부여 (버튼 속성 직접 제어)
                         if is_excluded:
                             st.markdown(f"""
                                 <style>
-                                div.stButton > button[key="m_tag_{m_id}"] {{
-                                    opacity: 0.3 !important;
-                                    filter: grayscale(100%) !important;
+                                button[key="m_tag_{m_id}"] {{
+                                    opacity: 0.25 !important;
+                                    filter: grayscale(100%) brightness(0.7) !important;
+                                    border: 1px dashed rgba(255,255,255,0.2) !important;
                                 }}
                                 </style>
                             """, unsafe_allow_html=True)
                 
                 st.divider()
-                
-                # 실제 분석에 참여할 멤버 필터링
-                active_members = [m for m in team_members if m[2] not in st.session_state.excluded_members]
 
                 if len(active_members) < 2:
                     st.warning("분석을 위해 최소 2명 이상의 멤버를 포함해 주세요.")
