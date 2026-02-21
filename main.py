@@ -592,31 +592,37 @@ def show_main_content(emp_id):
                         active_members.append(member)
                     
                     with cols[idx % 5]:
-                        # 상태에 따른 스타일 주입 (버튼 크기 축소 및 테마 적용)
+                        # 각 버튼마다 고유한 CSS를 주입하여 Streamlit 기본 스타일을 완전히 덮어씌움
                         if is_excluded:
                             st.markdown(f"""
                                 <style>
-                                button[key="m_tag_{m_id}"] {{
-                                    background: rgba(255, 255, 255, 0.02) !important;
-                                    color: rgba(255, 255, 255, 0.1) !important;
-                                    border: 1px dashed rgba(255, 255, 255, 0.1) !important;
-                                    opacity: 0.2 !important;
-                                    height: 2.2rem !important;
-                                    font-size: 0.8rem !important;
+                                div.stButton > button[key="m_tag_{m_id}"] {{
+                                    background: rgba(255, 255, 255, 0.05) !important;
+                                    color: rgba(255, 255, 255, 0.2) !important;
+                                    border: 1px dashed rgba(255, 255, 255, 0.2) !important;
+                                    opacity: 0.3 !important;
+                                    height: 32px !important;
+                                    min-height: 32px !important;
+                                    font-size: 12px !important;
                                     box-shadow: none !important;
+                                    transform: none !important;
+                                    margin: 2px 0 !important;
                                 }}
                                 </style>
                             """, unsafe_allow_html=True)
                         else:
                             st.markdown(f"""
                                 <style>
-                                button[key="m_tag_{m_id}"] {{
+                                div.stButton > button[key="m_tag_{m_id}"] {{
                                     background: linear-gradient(135deg, #6366F1 0%, #A855F7 100%) !important;
                                     color: #FFFFFF !important;
-                                    height: 2.2rem !important;
-                                    font-size: 0.8rem !important;
+                                    height: 32px !important;
+                                    min-height: 32px !important;
+                                    font-size: 12px !important;
                                     opacity: 1.0 !important;
-                                    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3) !important;
+                                    border: none !important;
+                                    box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
+                                    margin: 2px 0 !important;
                                 }}
                                 </style>
                             """, unsafe_allow_html=True)
