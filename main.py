@@ -22,6 +22,8 @@ if 'view' not in st.session_state:
     st.session_state.view = 'login'
 if 'excluded_members' not in st.session_state:
     st.session_state.excluded_members = set()
+if 'selected_member_to_move' not in st.session_state:
+    st.session_state.selected_member_to_move = None
 
 def set_page_style():
     """다크모드 완벽 대응 및 SaaS 스타일 UI"""
@@ -205,63 +207,30 @@ def set_page_style():
             border: 1px solid rgba(168, 85, 247, 0.2) !important;
         }
 
-        /* 팀 멤버 태그 스타일 - 뱃지 스타일 가로 나열 */
-        .member-list-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            padding: 15px 0;
-            justify-content: flex-start;
-            align-items: center;
-        }
-
-        .member-tag-wrapper {
-            position: relative;
-            display: inline-flex;
-            margin-top: 10px; /* 뱃지 공간 */
-            margin-right: 5px;
-        }
-
-        .member-tag {
-            display: flex;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.08);
+        /* 분석 리스트 박스 */
+        .member-list-box {
+            background: rgba(0, 0, 0, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
-            padding: 10px 20px;
-            transition: all 0.3s;
-            min-width: 60px;
-            justify-content: center;
-            white-space: nowrap; /* 이름 줄바꿈 방지 */
+            padding: 10px;
+            height: 250px;
+            overflow-y: auto;
         }
-
-        .member-name {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: #fff;
+        .member-item {
+            padding: 8px 12px;
+            margin: 4px 0;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
         }
-
-        .remove-btn-container {
-            position: absolute;
-            top: -10px;
-            right: -10px; /* 오른쪽 상단 뱃지로 이동 */
-            z-index: 10;
+        .member-item:hover {
+            background: rgba(255, 255, 255, 0.1);
         }
-        
-        /* 스트림릿 버튼 커스텀 (제외 버튼용 뱃지 스타일) */
-        .remove-btn-container button {
-            width: 24px !important;
-            height: 24px !important;
-            padding: 0 !important;
-            border-radius: 50% !important;
-            font-size: 10px !important;
-            background: #ef4444 !important; /* 강렬한 레드 뱃지 */
-            border: 2px solid #1e1e1e !important;
-            color: #fff !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+        .member-item.selected {
+            border-color: #A855F7;
+            background: rgba(168, 85, 247, 0.1);
         }
         </style>
     """, unsafe_allow_html=True)
@@ -594,42 +563,48 @@ def show_main_content(emp_id):
             if len(team_members) < 2:
                 st.info(f"현재 {user_team}에 등록된 멤버가 부족합니다. (최소 2명 이상 필요)")
             else:
-                # 필터링 로직: st.session_state.excluded_members에 없는 멤버만 추출
-                active_members = [m for m in team_members if m[2] not in st.session_state.excluded_members]
-                
                 st.markdown("**참여 멤버 관리**")
-                st.caption("💡 상단 [ⓧ] 버튼을 눌러 분석에서 임시로 제외할 수 있습니다. (새로고침 시 복구)")
+                st.caption("💡 이름을 클릭한 후 화살표 버튼을 눌러 목록을 이동시킬 수 있습니다.")
                 
-                # 멤버 리스트 가로 나열 - Flexbox 레이아웃 적용
-                st.markdown('<div class="member-list-container">', unsafe_allow_html=True)
-                for idx, member in enumerate(team_members):
-                    m_name, m_data, m_id = member
-                    is_excluded = m_id in st.session_state.excluded_members
-                    
-                    # 각 멤버마다 독립적인 열(Column)을 쓰지 않고 직접 마크다운과 버튼 배치
-                    with st.container():
-                        st.markdown(f'''
-                            <div class="member-tag-wrapper">
-                                <div class="remove-btn-container" id="btn-container-{m_id}"></div>
-                                <div class="member-tag" style="opacity: {0.4 if is_excluded else 1.0};">
-                                    <span class="member-name">{m_name}</span>
-                                </div>
-                            </div>
-                        ''', unsafe_allow_html=True)
-                        
-                        # 제외 버튼 배치 (CSS로 위 컨테이너와 겹치게 처리)
-                        with st.container():
-                            # 버튼을 감싸는 wrapper 스타일링
-                            st.markdown(f'<div class="remove-btn-container">', unsafe_allow_html=True)
-                            btn_label = "ⓧ" if not is_excluded else "➕"
-                            if st.button(btn_label, key=f"excl_{m_id}", help="제외/포함"):
-                                if is_excluded:
-                                    st.session_state.excluded_members.remove(m_id)
-                                else:
-                                    st.session_state.excluded_members.add(m_id)
+                col_active, col_arrow, col_excluded = st.columns([4, 1, 4])
+                
+                # 멤버 분류
+                active_members = [m for m in team_members if m[2] not in st.session_state.excluded_members]
+                excluded_members_list = [m for m in team_members if m[2] in st.session_state.excluded_members]
+                
+                with col_active:
+                    st.markdown('<p style="text-align:center; font-size:0.9rem; color:#A855F7; font-weight:600;">✅ 분석 참여</p>', unsafe_allow_html=True)
+                    st.markdown('<div class="member-list-box">', unsafe_allow_html=True)
+                    for m_name, m_data, m_id in active_members:
+                        is_selected = st.session_state.selected_member_to_move == m_id
+                        if st.button(f"{m_name}", key=f"btn_active_{m_id}", use_container_width=True, type="secondary" if not is_selected else "primary"):
+                            st.session_state.selected_member_to_move = m_id
+                            st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
+
+                with col_arrow:
+                    st.markdown('<div style="height: 100px;"></div>', unsafe_allow_html=True)
+                    if st.button("➡", help="분석 제외로 이동"):
+                        if st.session_state.selected_member_to_move:
+                            st.session_state.excluded_members.add(st.session_state.selected_member_to_move)
+                            st.session_state.selected_member_to_move = None
+                            st.rerun()
+                    if st.button("⬅", help="분석 참여로 이동"):
+                        if st.session_state.selected_member_to_move:
+                            if st.session_state.selected_member_to_move in st.session_state.excluded_members:
+                                st.session_state.excluded_members.remove(st.session_state.selected_member_to_move)
+                                st.session_state.selected_member_to_move = None
                                 st.rerun()
-                            st.markdown('</div>', unsafe_allow_html=True)
-                st.markdown('</div>', unsafe_allow_html=True)
+
+                with col_excluded:
+                    st.markdown('<p style="text-align:center; font-size:0.9rem; color:#888; font-weight:600;">❌ 분석 제외</p>', unsafe_allow_html=True)
+                    st.markdown('<div class="member-list-box">', unsafe_allow_html=True)
+                    for m_name, m_data, m_id in excluded_members_list:
+                        is_selected = st.session_state.selected_member_to_move == m_id
+                        if st.button(f"{m_name}", key=f"btn_excl_{m_id}", use_container_width=True, type="secondary" if not is_selected else "primary"):
+                            st.session_state.selected_member_to_move = m_id
+                            st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
 
                 st.divider()
 
