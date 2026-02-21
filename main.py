@@ -128,15 +128,47 @@ def set_page_style():
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
         
-        /* 결과 리포트 박스 - 네온 보더 효과 */
+        /* 결과 리포트 박스 - 네온 보더 효과 및 마크다운 스타일링 */
         .report-box {
             background: rgba(255, 255, 255, 0.02);
             border: 1px solid rgba(168, 85, 247, 0.2);
-            padding: 2rem;
+            padding: 2.5rem;
             border-radius: 24px;
             margin-top: 2rem;
             position: relative;
             overflow: hidden;
+            line-height: 1.8;
+            color: #e2e8f0;
+        }
+        
+        .report-box h1, .report-box h2, .report-box h3 {
+            color: #fff;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #fff 0%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .report-box hr {
+            border: 0;
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(168, 85, 247, 0.5), transparent);
+            margin: 2rem 0;
+        }
+
+        .report-box strong {
+            color: #a855f7;
+            font-weight: 700;
+        }
+
+        .report-box ul, .report-box ol {
+            padding-left: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .report-box li {
+            margin-bottom: 0.5rem;
         }
         
         .report-box::before {
@@ -144,9 +176,9 @@ def set_page_style():
             position: absolute;
             top: 0;
             left: 0;
-            width: 4px;
-            height: 100%;
-            background: linear-gradient(to bottom, #6366F1, #A855F7);
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(to right, #6366F1, #A855F7);
         }
 
         /* 입력창 디자인 - 다크 모던 */
@@ -236,7 +268,10 @@ def signup_dialog():
 def show_report_dialog(title, content):
     st.markdown(f"### {title}")
     st.markdown("---")
-    st.markdown(content)
+    with st.container():
+        st.markdown(f'<div class="report-box" style="margin-top:0;">', unsafe_allow_html=True)
+        st.markdown(content)
+        st.markdown('</div>', unsafe_allow_html=True)
 
 def show_main_content(emp_id):
     user_info = db.get_user_info(emp_id)
@@ -467,7 +502,10 @@ def show_main_content(emp_id):
                         report = ai_engine.analyze_compatibility(info_a[1], info_b[1], info_a[0], info_b[0], mode=mode_map[mode], additional_info=additional_info)
                         db.save_analysis_report(emp_id, selected_other, mode_map[mode], report)
                     st.markdown("---")
-                    st.markdown(f'<div class="report-box">{report}</div>', unsafe_allow_html=True)
+                    with st.container():
+                        st.markdown(f'<div class="report-box">', unsafe_allow_html=True)
+                        st.markdown(report)
+                        st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with tab4:
@@ -491,7 +529,10 @@ def show_main_content(emp_id):
                         report = ai_engine.analyze_team_synergy(data_for_ai, user_team, leader_name)
                         db.save_analysis_report(emp_id, user_team, "Team Analysis", report)
                     st.markdown("---")
-                    st.markdown(report)
+                    with st.container():
+                        st.markdown(f'<div class="report-box">', unsafe_allow_html=True)
+                        st.markdown(report)
+                        st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with tab5:
@@ -514,7 +555,10 @@ def show_main_content(emp_id):
                     report = ai_engine.analyze_compatibility(info_self[1], None, info_self[0], None, mode=report_type, additional_info={"gender": gender})
                     db.save_analysis_report(emp_id, None, report_type, report)
                 st.markdown("---")
-                st.markdown(f'<div class="report-box">{report}</div>', unsafe_allow_html=True)
+                with st.container():
+                    st.markdown(f'<div class="report-box">', unsafe_allow_html=True)
+                    st.markdown(report)
+                    st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
 def main():
