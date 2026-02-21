@@ -37,104 +37,108 @@ def set_page_style():
             font-family: 'Inter', 'Noto Sans KR', sans-serif;
         }
 
+        /* 메인 배경 효과 */
+        .stApp {
+            background: radial-gradient(circle at 50% -20%, rgba(225, 0, 42, 0.05), transparent);
+        }
+
         /* 버튼 및 인터랙션 요소 */
         .stButton > button {
             width: 100%;
-            border-radius: 8px;
-            height: 3rem;
+            border-radius: 12px;
+            height: 3.2rem;
             font-weight: 600;
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(128, 128, 128, 0.1);
+            background-color: rgba(255, 255, 255, 0.05);
         }
 
-        /* 강조 버튼 (SK Red) - 다크모드에서도 명확히 보이도록 설정 */
+        /* 강조 버튼 (SK Red) */
         div.stButton > button:first-child {
-            background-color: #E1002A !important;
+            background: linear-gradient(135deg, #E1002A 0%, #FF2E5B 100%) !important;
             color: #FFFFFF !important;
             border: none !important;
+            box-shadow: 0 4px 15px rgba(225, 0, 42, 0.2);
         }
         
         div.stButton > button:hover {
-            box-shadow: 0 4px 15px rgba(225, 0, 42, 0.3);
-            transform: translateY(-1px);
+            box-shadow: 0 8px 25px rgba(225, 0, 42, 0.4);
+            transform: translateY(-2px);
         }
 
-        /* 카드형 섹션 - 다크모드 대응 컬러 */
+        /* 카드형 섹션 */
         .card {
-            padding: 2rem;
-            border-radius: 16px;
+            padding: 2.5rem;
+            border-radius: 24px;
             margin-bottom: 2rem;
-            border: 1px solid rgba(128, 128, 128, 0.2);
-            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         }
 
         /* 타이틀 디자인 */
         .header-title {
-            font-size: 2.2rem;
-            font-weight: 800;
-            letter-spacing: -1px;
+            font-size: 2.8rem;
+            font-weight: 900;
+            letter-spacing: -2px;
             text-align: center;
             margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, #E1002A 0%, #FF5E00 100%);
+            background: linear-gradient(135deg, #E1002A 0%, #FF8A00 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
         }
         
         .header-sub {
-            font-size: 1rem;
+            font-size: 1.1rem;
             color: #888;
             text-align: center;
-            margin-bottom: 3rem;
+            margin-bottom: 3.5rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-transform: uppercase;
         }
 
         /* 탭 커스텀 */
         .stTabs [data-baseweb="tab-list"] {
-            gap: 8px;
-            padding: 4px;
-            border-radius: 12px;
+            gap: 12px;
+            padding: 8px;
+            background-color: rgba(128, 128, 128, 0.05);
+            border-radius: 16px;
+        }
+
+        .stTabs [data-baseweb="tab"] {
+            border-radius: 10px;
+            padding: 8px 16px;
+            transition: all 0.2s;
+        }
+
+        .stTabs [aria-selected="true"] {
+            background-color: rgba(225, 0, 42, 0.1) !important;
+            color: #E1002A !important;
         }
         
-        /* 설명 문구 */
-        .description {
-            font-size: 0.9rem;
-            color: #888;
-            line-height: 1.6;
-            margin-bottom: 1.5rem;
+        /* 결과 리포트 박스 스타일 */
+        .report-box {
+            background: rgba(255, 255, 255, 0.02);
+            border-left: 4px solid #E1002A;
+            padding: 1.5rem;
+            border-radius: 0 16px 16px 0;
+            margin-top: 2rem;
         }
 
-        /* 다크모드 글자색 보정 */
-        [data-testid="stMarkdownContainer"] p {
-            color: inherit;
+        /* 입력창 포커스 효과 */
+        .stTextInput input, .stTextArea textarea {
+            border-radius: 12px !important;
+            border: 1px solid rgba(128, 128, 128, 0.2) !important;
+            background-color: rgba(0, 0, 0, 0.1) !important;
+            transition: all 0.3s;
         }
 
-        /* 분석 대상 삭제 버튼 스타일링 */
-        div[data-testid="stColumn"]:nth-child(2) button[kind="secondary"] {
-            border: none;
-            background: transparent;
-            color: #ef4444;
-            font-size: 1.5rem;
-            height: auto;
-            padding: 0;
-            margin-top: 5px;
-        }
-        div[data-testid="stColumn"]:nth-child(2) button[kind="secondary"]:hover {
-            color: #f87171;
-            background: transparent;
-            box-shadow: none;
-            transform: none;
-        }
-
-        /* 사이드바 히스토리 스타일 */
-        .sidebar-history-item {
-            font-size: 0.85rem;
-            padding: 0.5rem;
-            border-radius: 6px;
-            background: rgba(255,255,255,0.05);
-            margin-bottom: 0.5rem;
-            cursor: pointer;
-            border: 1px solid rgba(128,128,128,0.1);
-        }
-        .sidebar-history-item:hover {
-            background: rgba(255,255,255,0.1);
+        .stTextInput input:focus, .stTextArea textarea:focus {
+            border-color: #E1002A !important;
+            box-shadow: 0 0 0 2px rgba(225, 0, 42, 0.2) !important;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -437,11 +441,11 @@ def show_main_content(emp_id):
                     info_a = db.get_user_info(emp_id)
                     info_b = db.get_user_info(selected_other)
                     mode_map = {"직장 동료": "colleague", "연인 궁합": "couple", "상사-부하": "hierarchy"}
-                    with st.spinner("🔍 분석 중..."):
+                    with st.spinner("🔍 Gemini 3가 시너지를 정교하게 분석 중입니다..."):
                         report = ai_engine.analyze_compatibility(info_a[1], info_b[1], info_a[0], info_b[0], mode=mode_map[mode], additional_info=additional_info)
                         db.save_analysis_report(emp_id, selected_other, mode_map[mode], report)
                     st.markdown("---")
-                    st.markdown(report)
+                    st.markdown(f'<div class="report-box">{report}</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with tab4:
@@ -484,11 +488,11 @@ def show_main_content(emp_id):
             if btn_cols[2].button("🌟 장단점 분석", use_container_width=True): report_type = "self_swot"
             
             if report_type:
-                with st.spinner("🔍 분석 중..."):
+                with st.spinner("🔍 Gemini 3가 당신의 페르소나를 매핑 중입니다..."):
                     report = ai_engine.analyze_compatibility(info_self[1], None, info_self[0], None, mode=report_type, additional_info={"gender": gender})
                     db.save_analysis_report(emp_id, None, report_type, report)
                 st.markdown("---")
-                st.markdown(report)
+                st.markdown(f'<div class="report-box">{report}</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
 def main():
