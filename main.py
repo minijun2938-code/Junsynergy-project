@@ -205,59 +205,63 @@ def set_page_style():
             border: 1px solid rgba(168, 85, 247, 0.2) !important;
         }
 
-        /* 팀 멤버 태그 스타일 - 모바일 친화적 */
+        /* 팀 멤버 태그 스타일 - 뱃지 스타일 가로 나열 */
         .member-list-container {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
-            padding: 10px 0;
+            gap: 15px;
+            padding: 15px 0;
             justify-content: flex-start;
+            align-items: center;
         }
 
         .member-tag-wrapper {
             position: relative;
-            margin: 5px;
+            display: inline-flex;
+            margin-top: 10px; /* 뱃지 공간 */
+            margin-right: 5px;
         }
 
         .member-tag {
-            display: inline-flex;
+            display: flex;
             align-items: center;
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 14px;
-            padding: 12px 20px;
+            border-radius: 16px;
+            padding: 10px 20px;
             transition: all 0.3s;
-            min-width: 80px;
+            min-width: 60px;
             justify-content: center;
+            white-space: nowrap; /* 이름 줄바꿈 방지 */
         }
 
         .member-name {
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 600;
             color: #fff;
         }
 
         .remove-btn-container {
             position: absolute;
-            top: -12px;
-            left: -12px;
+            top: -10px;
+            right: -10px; /* 오른쪽 상단 뱃지로 이동 */
             z-index: 10;
         }
         
-        /* 스트림릿 버튼 커스텀 (제외 버튼용) */
+        /* 스트림릿 버튼 커스텀 (제외 버튼용 뱃지 스타일) */
         .remove-btn-container button {
-            width: 28px !important;
-            height: 28px !important;
+            width: 24px !important;
+            height: 24px !important;
             padding: 0 !important;
             border-radius: 50% !important;
-            font-size: 12px !important;
-            line-height: 1 !important;
-            background: rgba(0, 0, 0, 0.6) !important;
-            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            font-size: 10px !important;
+            background: #ef4444 !important; /* 강렬한 레드 뱃지 */
+            border: 2px solid #1e1e1e !important;
             color: #fff !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
         }
         </style>
     """, unsafe_allow_html=True)
