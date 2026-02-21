@@ -376,8 +376,11 @@ def show_main_content(emp_id):
         if not history:
             st.caption("아직 분석 내역이 없습니다.")
         else:
-            for h_target_id, h_target_name, h_mode, h_report, h_date, h_id, h_fav in history:
+            for h_info in history:
+                # 데이터 구조가 바뀐 것을 고려하여 안전하게 추출
+                h_target_id, h_target_name, h_mode, h_report, h_date = h_info[:5]
                 display_name = h_target_name if h_target_name else "본인"
+                
                 # 모드명 한글 변환
                 mode_kr = {
                     "colleague": "직장동료", "couple": "연인궁합", "hierarchy": "상사부하",
@@ -386,24 +389,8 @@ def show_main_content(emp_id):
                 }.get(h_mode, h_mode)
                 
                 title = f"{display_name} | {mode_kr}"
-                fav_icon = "⭐" if h_fav else "☆"
-                
-                # 가로 배치를 위한 컬럼
-                hist_col, fav_col, del_col = st.columns([6, 1, 1])
-                
-                with hist_col:
-                    if st.button(f"{title}\n({h_date})", key=f"hist_{h_id}", help=h_date):
-                        show_report_dialog(title, h_report)
-                
-                with fav_col:
-                    if st.button(fav_icon, key=f"fav_{h_id}", help="즐겨찾기"):
-                        db.toggle_favorite(h_id, emp_id)
-                        st.rerun()
-                
-                with del_col:
-                    if st.button("🗑️", key=f"del_{h_id}", help="삭제"):
-                        db.delete_analysis_history(h_id, emp_id)
-                        st.rerun()
+                if st.button(f"{title}\n({h_date})", key=f"hist_{h_date}_{h_target_id}", help=h_date):
+                    show_report_dialog(title, h_report)
 
     # 알림 데이터 가져오기
     pending_requests = db.get_pending_requests(emp_id)
