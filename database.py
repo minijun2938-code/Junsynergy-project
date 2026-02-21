@@ -44,7 +44,13 @@ def init_db():
                       target_id TEXT,
                       mode TEXT,
                       report TEXT,
-                      created_at TEXT)''')
+                      created_at TEXT,
+                      is_favorite INTEGER DEFAULT 0)''')
+        
+        # Migration: is_favorite 컬럼 추가
+        try:
+            c.execute("ALTER TABLE analysis_history ADD COLUMN is_favorite INTEGER DEFAULT 0")
+        except: pass
         conn.commit()
 
 def save_profile(emp_id, profile_json, llm_name=None):
@@ -119,7 +125,7 @@ def save_analysis_report(emp_id, target_id, mode, report):
     now = get_kst_now()
     with get_connection() as conn:
         c = conn.cursor()
-        c.execute("INSERT INTO analysis_history (emp_id, target_id, mode, report, created_at) VALUES (?, ?, ?, ?, ?)",
+        c.execute("INSERT INTO analysis_history (emp_id, target_id, mode, report, created_at, is_favorite) VALUES (?, ?, ?, ?, ?, 0)",
                   (emp_id, target_id, mode, report, now))
         conn.commit()
 
@@ -129,9 +135,23 @@ def get_analysis_history(emp_id):
         c = conn.cursor()
         # target_id가 NULL인 경우는 '내 성향 분석'
         return c.execute("""
-            SELECT h.target_id, u.name, h.mode, h.report, h.created_at 
+            SELECT h.target_id, u.name, h.mode, h.report, h.created_at, h.id, h.is_favorite
             FROM analysis_history h
             LEFT JOIN user_profiles u ON h.target_id = u.emp_id
             WHERE h.emp_id=? 
-            ORDER BY h.created_at DESC LIMIT 20
+            ORDER BY h.is_favorite DESC, h.created_at DESC LIMIT 20
         """, (emp_id,)).fetchall()
+
+def delete_analysis_history(history_id, emp_id):
+    """특정 분석 히스토리를 삭제합니다."""
+    with get_connection() as conn:
+        c = conn.cursor()
+        c.execute("DELETE FROM analysis_history WHERE id=? AND emp_id=?", (history_id, emp_id))
+        conn.commit()
+
+def toggle_favorite(history_id, emp_id):
+    """즐겨찾기 상태를 토글합니다."""
+    with get_connection() as conn:
+        c = conn.cursor()
+        c.execute("UPDATE analysis_history SET is_favorite = 1 - is_favorite WHERE id=? AND emp_id=?", (history_id, emp_id))
+        conn.commit()
