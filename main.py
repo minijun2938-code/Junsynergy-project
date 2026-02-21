@@ -594,17 +594,30 @@ def show_main_content(emp_id):
                     with cols[idx % 5]:
                         # 제외 상태에 따른 버튼 스타일 결정
                         if is_excluded:
-                            # 제외된 경우: 스타일이 직접 적용된 마크다운 버튼 사용
+                            # 다크모드에서도 확실히 구분되도록 배경을 거의 투명하게, 테두리만 남김
                             st.markdown(f"""
                                 <style>
                                 div.stButton > button[key="m_tag_{m_id}"] {{
-                                    background-color: rgba(0, 0, 0, 0.4) !important;
-                                    color: rgba(255, 255, 255, 0.2) !important;
-                                    opacity: 0.3 !important;
+                                    background: rgba(255, 255, 255, 0.02) !important;
+                                    color: rgba(255, 255, 255, 0.1) !important;
                                     border: 1px dashed rgba(255, 255, 255, 0.1) !important;
                                     box-shadow: none !important;
                                     transform: none !important;
-                                    filter: grayscale(100%) !important;
+                                    opacity: 0.2 !important;
+                                    filter: blur(0.5px) grayscale(100%) !important;
+                                }}
+                                </style>
+                            """, unsafe_allow_html=True)
+                        else:
+                            # 참여 중인 버튼은 인디고-퍼플 그라데이션 강제 적용
+                            st.markdown(f"""
+                                <style>
+                                div.stButton > button[key="m_tag_{m_id}"] {{
+                                    background: linear-gradient(135deg, #6366F1 0%, #A855F7 100%) !important;
+                                    color: #FFFFFF !important;
+                                    border: none !important;
+                                    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3) !important;
+                                    opacity: 1.0 !important;
                                 }}
                                 </style>
                             """, unsafe_allow_html=True)
