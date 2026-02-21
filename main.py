@@ -582,7 +582,7 @@ def show_main_content(emp_id):
                 # 멤버 분류 및 필터링
                 active_members = []
                 
-                # 버튼 레이아웃 (반응형)
+                # 버튼 레이아웃 (반응형 - 5열)
                 cols = st.columns(5)
                 for idx, member in enumerate(team_members):
                     m_name, m_data, m_id = member
@@ -592,36 +592,35 @@ def show_main_content(emp_id):
                         active_members.append(member)
                     
                     with cols[idx % 5]:
-                        # 제외 상태에 따른 버튼 스타일 결정
+                        # 상태에 따른 스타일 주입 (버튼 크기 축소 및 테마 적용)
                         if is_excluded:
-                            # 다크모드에서도 확실히 구분되도록 배경을 거의 투명하게, 테두리만 남김
                             st.markdown(f"""
                                 <style>
-                                div.stButton > button[key="m_tag_{m_id}"] {{
+                                button[key="m_tag_{m_id}"] {{
                                     background: rgba(255, 255, 255, 0.02) !important;
                                     color: rgba(255, 255, 255, 0.1) !important;
                                     border: 1px dashed rgba(255, 255, 255, 0.1) !important;
-                                    box-shadow: none !important;
-                                    transform: none !important;
                                     opacity: 0.2 !important;
-                                    filter: blur(0.5px) grayscale(100%) !important;
+                                    height: 2.2rem !important;
+                                    font-size: 0.8rem !important;
+                                    box-shadow: none !important;
                                 }}
                                 </style>
                             """, unsafe_allow_html=True)
                         else:
-                            # 참여 중인 버튼은 인디고-퍼플 그라데이션 강제 적용
                             st.markdown(f"""
                                 <style>
-                                div.stButton > button[key="m_tag_{m_id}"] {{
+                                button[key="m_tag_{m_id}"] {{
                                     background: linear-gradient(135deg, #6366F1 0%, #A855F7 100%) !important;
                                     color: #FFFFFF !important;
-                                    border: none !important;
-                                    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3) !important;
+                                    height: 2.2rem !important;
+                                    font-size: 0.8rem !important;
                                     opacity: 1.0 !important;
+                                    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3) !important;
                                 }}
                                 </style>
                             """, unsafe_allow_html=True)
-                        
+
                         if st.button(m_name, key=f"m_tag_{m_id}", use_container_width=True):
                             if is_excluded:
                                 st.session_state.excluded_members.remove(m_id)
