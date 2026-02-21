@@ -207,43 +207,43 @@ def set_page_style():
             border: 1px solid rgba(168, 85, 247, 0.2) !important;
         }
 
-        /* 분석 리스트 박스 - 모바일 컴팩트 최적화 */
-        .member-list-box {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 4px;
-            height: 140px; /* 더 낮게 조정 */
-            overflow-y: auto;
-        }
-        
-        /* 버튼 텍스트 크기 축소 */
-        .stButton > button {
-            font-size: 0.85rem !important;
-            height: 2.8rem !important;
-        }
-
-        .compact-member-btn > div > button {
-            height: 2.2rem !important;
-            font-size: 0.8rem !important;
-            margin-bottom: 2px !important;
-            padding: 0 10px !important;
-        }
-        
-        .arrow-btn-container {
+        /* 팀 멤버 리스트 컨테이너 - 가로 나열 및 줄바꿈 */
+        .member-list-container {
             display: flex;
-            flex-direction: column;
+            flex-wrap: wrap;
             gap: 10px;
-            justify-content: center;
-            align-items: center;
-            height: 140px;
+            padding: 10px 0;
+            justify-content: flex-start;
         }
 
-        .arrow-btn-container button {
-            width: 35px !important;
-            height: 35px !important;
-            padding: 0 !important;
-            font-size: 14px !important;
+        .member-tag {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            padding: 10px 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            min-width: 60px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* 참여 상태 스타일 (기본) */
+        .member-active {
+            background: rgba(168, 85, 247, 0.15);
+            color: #fff;
+            border-color: rgba(168, 85, 247, 0.3);
+            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.1);
+        }
+
+        /* 제외 상태 스타일 (옅어짐) */
+        .member-excluded {
+            background: rgba(255, 255, 255, 0.03);
+            color: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.05);
+            opacity: 0.5;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -577,55 +577,60 @@ def show_main_content(emp_id):
                 st.info(f"현재 {user_team}에 등록된 멤버가 부족합니다. (최소 2명 이상 필요)")
             else:
                 st.markdown("**참여 멤버 관리**")
+                st.caption("💡 분석에서 제외하고 싶은 사람은 이름을 클릭해 주세요. (옅게 표시됨)")
                 
-                # 멤버 분류
-                active_members = [m for m in team_members if m[2] not in st.session_state.excluded_members]
-                excluded_members_list = [m for m in team_members if m[2] in st.session_state.excluded_members]
+                # 멤버 리스트 가로 나열 - Columns 활용하여 줄바꿈 자동화
+                active_members_to_show = []
                 
-                # 모바일에서 한 화면에 들어오도록 비율 조정 (1:0.3:1)
-                col_active, col_arrow, col_excluded = st.columns([1, 0.4, 1])
+                # 5열 레이아웃 (모바일에서는 자동으로 줄바꿈됨)
+                cols = st.columns(5)
                 
-                with col_active:
-                    st.markdown('<p style="text-align:center; font-size:0.75rem; color:#A855F7; margin-bottom:5px; font-weight:bold;">✅ 참여</p>', unsafe_allow_html=True)
-                    st.markdown('<div class="member-list-box">', unsafe_allow_html=True)
-                    for m_name, m_data, m_id in active_members:
-                        is_selected = st.session_state.selected_member_to_move == m_id
-                        st.markdown('<div class="compact-member-btn">', unsafe_allow_html=True)
-                        if st.button(f"{m_name}", key=f"active_{m_id}", use_container_width=True, 
-                                     type="secondary" if not is_selected else "primary"):
-                            st.session_state.selected_member_to_move = m_id
+                for idx, member in enumerate(team_members):
+                    m_name, m_data, m_id = member
+                    is_excluded = m_id in st.session_state.excluded_members
+                    
+                    with cols[idx % 5]:
+                        # 버튼 스타일을 상태에 따라 다르게 적용
+                        btn_type = "secondary" if is_excluded else "primary"
+                        if st.button(f"{m_name}", key=f"m_tag_{m_id}", use_container_width=True):
+                            if is_excluded:
+                                st.session_state.excluded_members.remove(m_id)
+                            else:
+                                st.session_state.excluded_members.add(m_id)
                             st.rerun()
-                        st.markdown('</div>', unsafe_allow_html=True)
-                    st.markdown('</div>', unsafe_allow_html=True)
-
-                with col_arrow:
-                    st.markdown('<div class="arrow-btn-container">', unsafe_allow_html=True)
-                    if st.button("➡", key="move_right_final"):
-                        if st.session_state.selected_member_to_move:
-                            st.session_state.excluded_members.add(st.session_state.selected_member_to_move)
-                            st.session_state.selected_member_to_move = None
-                            st.rerun()
-                    if st.button("⬅", key="move_left_final"):
-                        if st.session_state.selected_member_to_move and st.session_state.selected_member_to_move in st.session_state.excluded_members:
-                            st.session_state.excluded_members.remove(st.session_state.selected_member_to_move)
-                            st.session_state.selected_member_to_move = None
-                            st.rerun()
-                    st.markdown('</div>', unsafe_allow_html=True)
-
-                with col_excluded:
-                    st.markdown('<p style="text-align:center; font-size:0.75rem; color:#888; margin-bottom:5px; font-weight:bold;">❌ 제외</p>', unsafe_allow_html=True)
-                    st.markdown('<div class="member-list-box">', unsafe_allow_html=True)
-                    for m_name, m_data, m_id in excluded_members_list:
-                        is_selected = st.session_state.selected_member_to_move == m_id
-                        st.markdown('<div class="compact-member-btn">', unsafe_allow_html=True)
-                        if st.button(f"{m_name}", key=f"excl_{m_id}", use_container_width=True, 
-                                     type="secondary" if not is_selected else "primary"):
-                            st.session_state.selected_member_to_move = m_id
-                            st.rerun()
-                        st.markdown('</div>', unsafe_allow_html=True)
-                    st.markdown('</div>', unsafe_allow_html=True)
-
+                        
+                        # 제외된 경우 스타일 주입
+                        if is_excluded:
+                            st.markdown(f"""
+                                <style>
+                                div.stButton > button[key="m_tag_{m_id}"] {{
+                                    opacity: 0.3 !important;
+                                    filter: grayscale(100%) !important;
+                                }}
+                                </style>
+                            """, unsafe_allow_html=True)
+                
                 st.divider()
+                
+                # 실제 분석에 참여할 멤버 필터링
+                active_members = [m for m in team_members if m[2] not in st.session_state.excluded_members]
+
+                if len(active_members) < 2:
+                    st.warning("분석을 위해 최소 2명 이상의 멤버를 포함해 주세요.")
+                else:
+                    member_names = [m[0] for m in active_members]
+                    leader_name = st.selectbox("이 팀의 리더(팀장)는 누구인가요?", member_names)
+                    
+                    if st.button("🚀 팀 전체 시너지 분석"):
+                        with st.spinner("팀 역학 관계 및 시너지 분석 중..."):
+                            data_for_ai = [(m[0], m[1], m[2]) for m in active_members]
+                            report = ai_engine.analyze_team_synergy(data_for_ai, user_team, leader_name)
+                            db.save_analysis_report(emp_id, user_team, "Team Analysis", report)
+                        st.markdown("---")
+                        with st.container():
+                            st.markdown(f'<div class="report-box">', unsafe_allow_html=True)
+                            st.markdown(report)
+                            st.markdown('</div>', unsafe_allow_html=True)
 
                 if len(active_members) < 2:
                     st.warning("분석을 위해 최소 2명 이상의 멤버를 포함해 주세요.")
