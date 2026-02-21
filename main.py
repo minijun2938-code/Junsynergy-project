@@ -124,10 +124,19 @@ def set_page_style():
             border-radius: 12px;
             padding: 12px 24px;
             transition: all 0.3s;
-            color: rgba(255, 255, 255, 0.9) !important; /* 글자색을 거의 흰색에 가깝게 대폭 강화 */
-            background-color: rgba(255, 255, 255, 0.1) !important; /* 배경도 더 선명하게 */
-            border: 1px solid rgba(255, 255, 255, 0.2) !important; /* 테두리 강조 */
+            color: #555 !important; /* 기본(라이트모드) 글자색: 진한 회색 */
+            background-color: rgba(0, 0, 0, 0.05) !important;
+            border: 1px solid rgba(0, 0, 0, 0.1) !important;
             margin-right: 6px;
+        }
+
+        /* 다크모드 대응 미디어 쿼리 */
+        @media (prefers-color-scheme: dark) {
+            .stTabs [data-baseweb="tab"] {
+                color: rgba(255, 255, 255, 0.9) !important;
+                background-color: rgba(255, 255, 255, 0.1) !important;
+                border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            }
         }
 
         .stTabs [aria-selected="true"] {
