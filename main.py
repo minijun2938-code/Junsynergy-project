@@ -59,7 +59,7 @@ def set_page_style():
         }
 
         /* 강조 버튼 - 트렌디한 인디고-퍼플 그라데이션 */
-        div.stButton > button:first-child {
+        div.stButton > button:first-child, .stButton > button[kind="primary"] {
             background: linear-gradient(135deg, #6366F1 0%, #A855F7 100%) !important;
             color: #FFFFFF !important;
             border: none !important;
@@ -190,9 +190,16 @@ def set_page_style():
             padding: 1rem !important;
         }
 
-        .stTextInput input:focus, .stTextArea textarea:focus {
-            border-color: #A855F7 !important;
-            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.2) !important;
+        /* 분석 결과 상세 다이얼로그 내 버튼 등 추가 요소 스타일링 */
+        div[data-testid="stDialog"] button {
+            border-radius: 12px;
+        }
+        
+        /* 성공 메시지 컬러 변경 (Indigo 계열) */
+        div[data-testid="stNotification"] {
+            background-color: rgba(99, 102, 241, 0.1) !important;
+            color: #A855F7 !important;
+            border: 1px solid rgba(168, 85, 247, 0.2) !important;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -332,15 +339,16 @@ def show_main_content(emp_id):
             <div style="margin-bottom: 20px;">
                 <button onclick="copyToClipboard()" style="
                     width: 100%;
-                    background-color: #E1002A;
+                    background: linear-gradient(135deg, #6366F1 0%, #A855F7 100%);
                     color: white;
                     border: none;
-                    padding: 14px 20px;
-                    border-radius: 10px;
+                    padding: 16px 20px;
+                    border-radius: 16px;
                     font-weight: bold;
                     cursor: pointer;
                     font-size: 1.1rem;
-                    box-shadow: 0 4px 12px rgba(225, 0, 42, 0.2);
+                    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+                    transition: all 0.3s ease;
                 ">📋 {selected_llm}용 분석 문구 복사하기</button>
             </div>
             <script>
