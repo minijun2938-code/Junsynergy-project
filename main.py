@@ -633,23 +633,6 @@ def show_main_content(emp_id):
                             st.markdown(f'<div class="report-box">', unsafe_allow_html=True)
                             st.markdown(report)
                             st.markdown('</div>', unsafe_allow_html=True)
-
-                if len(active_members) < 2:
-                    st.warning("분석을 위해 최소 2명 이상의 멤버를 포함해 주세요.")
-                else:
-                    member_names = [m[0] for m in active_members]
-                    leader_name = st.selectbox("이 팀의 리더(팀장)는 누구인가요?", member_names)
-                    
-                    if st.button("🚀 팀 전체 시너지 분석"):
-                        with st.spinner("팀 역학 관계 및 시너지 분석 중..."):
-                            data_for_ai = [(m[0], m[1], m[2]) for m in active_members]
-                            report = ai_engine.analyze_team_synergy(data_for_ai, user_team, leader_name)
-                            db.save_analysis_report(emp_id, user_team, "Team Analysis", report)
-                        st.markdown("---")
-                        with st.container():
-                            st.markdown(f'<div class="report-box">', unsafe_allow_html=True)
-                            st.markdown(report)
-                            st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with tab5:
