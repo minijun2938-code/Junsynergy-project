@@ -205,32 +205,59 @@ def set_page_style():
             border: 1px solid rgba(168, 85, 247, 0.2) !important;
         }
 
-        /* 팀 멤버 태그 스타일 */
+        /* 팀 멤버 태그 스타일 - 모바일 친화적 */
+        .member-list-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 10px 0;
+            justify-content: flex-start;
+        }
+
+        .member-tag-wrapper {
+            position: relative;
+            margin: 5px;
+        }
+
         .member-tag {
             display: inline-flex;
             align-items: center;
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 10px 16px;
-            margin: 8px;
-            position: relative;
+            border-radius: 14px;
+            padding: 12px 20px;
             transition: all 0.3s;
+            min-width: 80px;
+            justify-content: center;
         }
-        .member-tag:hover {
-            background: rgba(255, 255, 255, 0.12);
-            transform: translateY(-2px);
-        }
+
         .member-name {
             font-size: 1rem;
             font-weight: 600;
             color: #fff;
-            margin-right: 4px;
         }
-        .remove-btn-wrapper {
+
+        .remove-btn-container {
             position: absolute;
-            top: -10px;
-            left: -10px;
+            top: -12px;
+            left: -12px;
+            z-index: 10;
+        }
+        
+        /* 스트림릿 버튼 커스텀 (제외 버튼용) */
+        .remove-btn-container button {
+            width: 28px !important;
+            height: 28px !important;
+            padding: 0 !important;
+            border-radius: 50% !important;
+            font-size: 12px !important;
+            line-height: 1 !important;
+            background: rgba(0, 0, 0, 0.6) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            color: #fff !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -564,27 +591,36 @@ def show_main_content(emp_id):
                 st.markdown("**참여 멤버 관리**")
                 st.caption("💡 상단 [ⓧ] 버튼을 눌러 분석에서 임시로 제외할 수 있습니다. (새로고침 시 복구)")
                 
-                # 멤버 리스트 가로 나열
-                cols = st.columns(len(team_members) if len(team_members) > 0 else 1)
+                # 멤버 리스트 가로 나열 - Flexbox 레이아웃 적용
+                st.markdown('<div class="member-list-container">', unsafe_allow_html=True)
                 for idx, member in enumerate(team_members):
                     m_name, m_data, m_id = member
                     is_excluded = m_id in st.session_state.excluded_members
                     
-                    with cols[idx % len(cols)]:
-                        st.markdown(f"""
-                            <div class="member-tag" style="opacity: {0.4 if is_excluded else 1.0};">
-                                <span class="member-name">{m_name}</span>
+                    # 각 멤버마다 독립적인 열(Column)을 쓰지 않고 직접 마크다운과 버튼 배치
+                    with st.container():
+                        st.markdown(f'''
+                            <div class="member-tag-wrapper">
+                                <div class="remove-btn-container" id="btn-container-{m_id}"></div>
+                                <div class="member-tag" style="opacity: {0.4 if is_excluded else 1.0};">
+                                    <span class="member-name">{m_name}</span>
+                                </div>
                             </div>
-                        """, unsafe_allow_html=True)
+                        ''', unsafe_allow_html=True)
                         
-                        # 왼쪽 상단에 배치될 제외 버튼
-                        btn_label = "ⓧ" if not is_excluded else "➕"
-                        if st.button(btn_label, key=f"excl_{m_id}", help="제외/포함"):
-                            if is_excluded:
-                                st.session_state.excluded_members.remove(m_id)
-                            else:
-                                st.session_state.excluded_members.add(m_id)
-                            st.rerun()
+                        # 제외 버튼 배치 (CSS로 위 컨테이너와 겹치게 처리)
+                        with st.container():
+                            # 버튼을 감싸는 wrapper 스타일링
+                            st.markdown(f'<div class="remove-btn-container">', unsafe_allow_html=True)
+                            btn_label = "ⓧ" if not is_excluded else "➕"
+                            if st.button(btn_label, key=f"excl_{m_id}", help="제외/포함"):
+                                if is_excluded:
+                                    st.session_state.excluded_members.remove(m_id)
+                                else:
+                                    st.session_state.excluded_members.add(m_id)
+                                st.rerun()
+                            st.markdown('</div>', unsafe_allow_html=True)
+                st.markdown('</div>', unsafe_allow_html=True)
 
                 st.divider()
 
