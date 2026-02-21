@@ -124,17 +124,18 @@ def set_page_style():
             border-radius: 12px;
             padding: 12px 24px;
             transition: all 0.3s;
-            color: rgba(255, 255, 255, 0.7) !important; /* 선택되지 않은 탭 글자색 강화 */
-            background-color: rgba(255, 255, 255, 0.05) !important; /* 선택되지 않은 탭도 배경을 살려줌 */
-            border: 1px solid rgba(255, 255, 255, 0.05) !important;
-            margin-right: 4px;
+            color: rgba(255, 255, 255, 0.9) !important; /* 글자색을 거의 흰색에 가깝게 대폭 강화 */
+            background-color: rgba(255, 255, 255, 0.1) !important; /* 배경도 더 선명하게 */
+            border: 1px solid rgba(255, 255, 255, 0.2) !important; /* 테두리 강조 */
+            margin-right: 6px;
         }
 
         .stTabs [aria-selected="true"] {
             background: linear-gradient(135deg, #6366F1 0%, #A855F7 100%) !important;
             color: #fff !important;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
             opacity: 1.0 !important;
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
         }
 
         /* 스트림릿 기본 빨간색 선 및 하이라이트 완전히 제거 */
@@ -606,10 +607,10 @@ def show_main_content(emp_id):
                         active_members.append(member)
                     
                     with cols[idx % 5]:
-                        # 제외 상태에 따른 버튼 레이블 및 스타일 (이모지로 상태 표시)
-                        label = f"{m_name}" if not is_excluded else f"❌ {m_name}"
+                        # 제외 상태에 따른 버튼 레이블 (이름 오른쪽 이모지 토글)
+                        label = f"{m_name}" if is_excluded else f"{m_name} 🙋"
                         
-                        # 스타일 주입 (다크모드에서도 명확한 시각적 대비)
+                        # 스타일 주입
                         if is_excluded:
                             st.markdown(f"""
                                 <style>
