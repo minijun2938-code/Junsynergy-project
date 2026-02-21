@@ -592,40 +592,29 @@ def show_main_content(emp_id):
                         active_members.append(member)
                     
                     with cols[idx % 5]:
-                        # 각 버튼마다 고유한 CSS를 주입하여 Streamlit 기본 스타일을 완전히 덮어씌움
-                        if is_excluded:
-                            st.markdown(f"""
-                                <style>
-                                div.stButton > button[key="m_tag_{m_id}"] {{
-                                    background: rgba(255, 255, 255, 0.05) !important;
-                                    color: rgba(255, 255, 255, 0.2) !important;
-                                    border: 1px dashed rgba(255, 255, 255, 0.2) !important;
-                                    opacity: 0.3 !important;
-                                    height: 32px !important;
-                                    min-height: 32px !important;
-                                    font-size: 12px !important;
-                                    box-shadow: none !important;
-                                    transform: none !important;
-                                    margin: 2px 0 !important;
-                                }}
-                                </style>
-                            """, unsafe_allow_html=True)
-                        else:
-                            st.markdown(f"""
-                                <style>
-                                div.stButton > button[key="m_tag_{m_id}"] {{
-                                    background: linear-gradient(135deg, #6366F1 0%, #A855F7 100%) !important;
-                                    color: #FFFFFF !important;
-                                    height: 32px !important;
-                                    min-height: 32px !important;
-                                    font-size: 12px !important;
-                                    opacity: 1.0 !important;
-                                    border: none !important;
-                                    box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
-                                    margin: 2px 0 !important;
-                                }}
-                                </style>
-                            """, unsafe_allow_html=True)
+                        # 제외 상태에 따른 버튼 스타일 결정 (최상단 전역 스타일로 주입)
+                        st.markdown(f"""
+                            <style>
+                            /* 모든 버튼의 기본 그림자 및 변화 효과 제거 */
+                            div.stButton > button {{
+                                transition: none !important;
+                                text-transform: none !important;
+                            }}
+                            
+                            /* 특정 키를 가진 버튼에 대한 강제 스타일 */
+                            div.stButton > button[key="m_tag_{m_id}"] {{
+                                background: {"rgba(255, 255, 255, 0.05)" if is_excluded else "linear-gradient(135deg, #6366F1 0%, #A855F7 100%)"} !important;
+                                color: {"rgba(255, 255, 255, 0.2)" if is_excluded else "#FFFFFF"} !important;
+                                opacity: {0.3 if is_excluded else 1.0} !important;
+                                border: { "1px dashed rgba(255, 255, 255, 0.2)" if is_excluded else "none" } !important;
+                                height: 32px !important;
+                                min-height: 32px !important;
+                                font-size: 12px !important;
+                                box-shadow: { "none" if is_excluded else "0 2px 5px rgba(0,0,0,0.2)" } !important;
+                                filter: { "grayscale(100%) brightness(0.7)" if is_excluded else "none" } !important;
+                            }}
+                            </style>
+                        """, unsafe_allow_html=True)
 
                         if st.button(m_name, key=f"m_tag_{m_id}", use_container_width=True):
                             if is_excluded:
