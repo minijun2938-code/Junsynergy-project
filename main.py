@@ -267,7 +267,8 @@ def set_page_style():
     """, unsafe_allow_html=True)
 
 def validate_emp_id(emp_id):
-    pattern = r'^sl\d{5}$'
+    # 문자 2개 + 숫자 5개 형식 (예: sl12345, ab98765)
+    pattern = r'^[a-zA-Z]{2}\d{5}$'
     return re.match(pattern, emp_id) is not None
 
 def show_login_page():
@@ -281,11 +282,14 @@ def show_login_page():
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        user_id = st.text_input("사번 (sl+5자리)", value=saved_id, placeholder="sl12345")
+        user_id = st.text_input("사번 (영문2자리+숫자5자리)", value=saved_id, placeholder="ex) sl12345")
         user_pw = st.text_input("비밀번호", type="password", placeholder="••••••••")
         
         # 아이디 저장 체크박스
         remember_me = st.checkbox("아이디 저장", value=bool(saved_id))
+        
+        # 에러 메시지를 표시할 공간
+        error_placeholder = st.empty()
         
         if st.button("로그인", use_container_width=True):
             if auth.check_login(user_id, user_pw):
@@ -301,7 +305,7 @@ def show_login_page():
                         del st.query_params["remembered_user"]
                 st.rerun()
             else:
-                st.error("사번 또는 비밀번호를 확인해주세요.")
+                error_placeholder.markdown('<div style="color: #ff4b4b; font-size: 0.85rem; text-align: center; margin-top: -10px; margin-bottom: 10px;">❌ 사번 또는 비밀번호가 일치하지 않습니다.</div>', unsafe_allow_html=True)
         
         st.markdown('<div style="text-align: center; margin-top: 1.5rem;">', unsafe_allow_html=True)
         if st.button("신규 구성원 가입", key="signup_btn"):
@@ -312,10 +316,10 @@ def show_login_page():
 @st.dialog("신규 구성원 가입")
 def signup_dialog():
     st.markdown("### 📝 구성원 등록")
-    new_id = st.text_input("사번 (Emp ID)", placeholder="sl12345")
+    new_id = st.text_input("사번 (영문2자리+숫자5자리)", placeholder="ex) sl12345")
     new_name = st.text_input("이름", placeholder="성함을 입력하세요")
     new_team = st.text_input("팀 이름", placeholder="ex) 기업문화팀 (정확히 입력)")
-    new_pw = st.text_input("비밀번호", type="password")
+    new_pw = st.text_input("비밀번호", type="password", help="특수문자, 숫자 등을 포함한 복잡한 비밀번호도 가능합니다.")
     
     st.divider()
     st.caption("개인정보 보호정책: 수집된 성향 데이터는 시너지 분석 목적으로만 사용되며, 언제든 파기 가능합니다.")
@@ -325,10 +329,11 @@ def signup_dialog():
         if not new_id or not new_name or not new_pw or not new_team:
             st.error("모든 정보를 입력해주세요.")
         elif not validate_emp_id(new_id):
-            st.error("사번 형식이 올바르지 않습니다 (slXXXXX).")
+            st.error("사번 형식이 올바르지 않습니다 (영문 2자리 + 숫자 5자리).")
         elif not agreed:
             st.warning("동의가 필요합니다.")
         else:
+            # 비밀번호 제약 없이 가입 허용
             if auth.register_user(new_id, new_pw, new_name, new_team.strip()):
                 st.success("가입 성공! 로그인을 진행해주세요.")
                 st.rerun()
