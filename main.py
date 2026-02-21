@@ -111,32 +111,38 @@ def set_page_style():
             opacity: 0.8;
         }
 
-        /* 탭 커스텀 - 애플 스타일 슬라이더 느낌 */
+        /* 탭 디자인 - 확실한 존재감과 다크 테마 최적화 */
         .stTabs [data-baseweb="tab-list"] {
-            gap: 10px;
-            padding: 8px;
-            background-color: rgba(255, 255, 255, 0.03) !important;
+            gap: 12px;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.07) !important;
             border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .stTabs [data-baseweb="tab"] {
-            border-radius: 14px;
-            padding: 10px 20px;
+            border-radius: 12px;
+            padding: 12px 24px;
             transition: all 0.3s;
-            color: #71717a !important;
+            color: rgba(255, 255, 255, 0.5) !important;
             border: none !important;
         }
 
         .stTabs [aria-selected="true"] {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%) !important;
+            background: linear-gradient(135deg, #6366F1 0%, #A855F7 100%) !important;
             color: #fff !important;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
         }
 
-        /* 탭 하단 빨간색 라인 제거 및 테마 컬러 적용 */
-        .stTabs [data-baseweb="tab-highlight-point"] {
-            background-color: #A855F7 !important;
+        /* 스트림릿 기본 빨간색 선 및 하이라이트 완전히 제거 */
+        .stTabs [data-baseweb="tab-highlight-point"], 
+        .stTabs [data-testid="stMarkdownContainer"] + div {
+            background-color: transparent !important;
+            display: none !important;
+        }
+        
+        div[data-baseweb="tab-border"] {
+            display: none !important;
         }
         
         /* 결과 리포트 박스 - 네온 보더 효과 및 마크다운 스타일링 */
