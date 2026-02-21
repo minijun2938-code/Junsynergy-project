@@ -591,11 +591,10 @@ def show_main_content(emp_id):
                 st.markdown("**참여 멤버 관리**")
                 st.caption("💡 분석에서 제외하고 싶은 사람은 이름을 클릭해 주세요. (옅게 표시됨)")
                 
-                # 멤버 분류 및 필터링
+                # 멤버 리스트 가로 나열 - Columns 활용
                 active_members = []
-                
-                # 버튼 레이아웃 (반응형 - 5열)
                 cols = st.columns(5)
+                
                 for idx, member in enumerate(team_members):
                     m_name, m_data, m_id = member
                     is_excluded = m_id in st.session_state.excluded_members
@@ -604,32 +603,40 @@ def show_main_content(emp_id):
                         active_members.append(member)
                     
                     with cols[idx % 5]:
-                        # 제외 상태에 따른 버튼 스타일 결정 (최상단 전역 스타일로 주입)
-                        st.markdown(f"""
-                            <style>
-                            /* 모든 버튼의 기본 그림자 및 변화 효과 제거 */
-                            div.stButton > button {{
-                                transition: none !important;
-                                text-transform: none !important;
-                            }}
-                            
-                            /* 특정 키를 가진 버튼에 대한 강제 스타일 */
-                            div.stButton > button[key="m_tag_{m_id}"] {{
-                                background: {"rgba(255, 255, 255, 0.05)" if is_excluded else "linear-gradient(135deg, #6366F1 0%, #A855F7 100%)"} !important;
-                                color: {"rgba(255, 255, 255, 0.2)" if is_excluded else "#FFFFFF"} !important;
-                                opacity: {0.3 if is_excluded else 1.0} !important;
-                                border: { "1px dashed rgba(255, 255, 255, 0.2)" if is_excluded else "none" } !important;
-                                height: 32px !important;
-                                min-height: 32px !important;
-                                font-size: 12px !important;
-                                box-shadow: { "none" if is_excluded else "0 2px 5px rgba(0,0,0,0.2)" } !important;
-                                filter: { "grayscale(100%) brightness(0.7)" if is_excluded else "none" } !important;
-                            }}
-                            </style>
-                        """, unsafe_allow_html=True)
+                        # 제외 상태에 따른 버튼 레이블 및 스타일 (이모지로 상태 표시)
+                        label = f"{m_name}" if not is_excluded else f"❌ {m_name}"
+                        
+                        # 스타일 주입 (다크모드에서도 명확한 시각적 대비)
+                        if is_excluded:
+                            st.markdown(f"""
+                                <style>
+                                div.stButton > button[key="m_tag_{m_id}"] {{
+                                    background: rgba(255, 255, 255, 0.05) !important;
+                                    color: rgba(255, 255, 255, 0.2) !important;
+                                    border: 1px dashed rgba(255, 255, 255, 0.2) !important;
+                                    opacity: 0.3 !important;
+                                    height: 35px !important;
+                                    font-size: 13px !important;
+                                }}
+                                </style>
+                            """, unsafe_allow_html=True)
+                        else:
+                            st.markdown(f"""
+                                <style>
+                                div.stButton > button[key="m_tag_{m_id}"] {{
+                                    background: linear-gradient(135deg, #6366F1 0%, #A855F7 100%) !important;
+                                    color: #FFFFFF !important;
+                                    border: none !important;
+                                    height: 35px !important;
+                                    font-size: 13px !important;
+                                    box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3) !important;
+                                }}
+                                </style>
+                            """, unsafe_allow_html=True)
 
-                        if st.button(m_name, key=f"m_tag_{m_id}", use_container_width=True):
-                            if is_excluded:
+                        # 클릭 이벤트: st.session_state를 즉시 변경하고 rerun
+                        if st.button(label, key=f"m_tag_{m_id}", use_container_width=True):
+                            if m_id in st.session_state.excluded_members:
                                 st.session_state.excluded_members.remove(m_id)
                             else:
                                 st.session_state.excluded_members.add(m_id)
