@@ -15,6 +15,9 @@ if 'logged_in_id' not in st.session_state:
     if "user" in query_params:
         st.session_state.logged_in_id = query_params["user"]
 
+if 'excluded_members' not in st.session_state:
+    st.session_state.excluded_members = set()
+
 if 'view' not in st.session_state:
     st.session_state.view = 'login'
 if 'excluded_members' not in st.session_state:
